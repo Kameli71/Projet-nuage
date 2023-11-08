@@ -5,20 +5,23 @@
 
   # Variables
   vars:
-    # ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: /usr/bin/python3
     # Default Names
-    title: "Demo"
-    vpc_name: "{{ title }} VPC"
+    title: "Karim"
+    vpc_id: "vpc-042a2b49f1cc34859"
     igw_name: "{{ title }} IGW"
-    subnet_name: "{{ title }} Subnet"
+    subnet_name: "{{ title }} Subnet priv"
     acl_name: "{{ title }} ACL"
-    instance_name: "{{ title }} Instance" 
-    security_group_name: "{{ title }} Security Group"
-    route_table_name: "{{ title }} Route Table"
+    instance_name: "{{ title }} Instance Infra" 
+    security_group_name: "{{ title }} Security Group Infra"
+    route_table_name: "{{ title }} Route Table Infra"
 
     # Default values for CIDR Blocks
     vpcCidrBlock: "10.0.0.0/16"
-    subNetCidrBlock: "10.0.1.0/24"
+    subNetCidrBlock: "10.0.39.0/24"
+    subNetCidrBlock2: "10.0.40.0/24"
+    subNetCidrBlock3: "10.0.41.0/24"
+    subNetCidrBlock4: "10.0.42.0/24"
     portCidrBlock: "0.0.0.0/0"
     destinationCidrBlock: "0.0.0.0/0"
 
@@ -26,22 +29,93 @@
     state: "present"
 
     # Default value of AZ & Regio
-    zone: "us-west-1a"
-    region: "us-west-1"
+    zone: "eu-west-1a"
+    zone2: "eu-west-1b"
+    region: "eu-west-1"
 
   # List of tasks
   tasks:
-    
-  # Creating VPC
-  - name: Create VPC
-    ec2_vpc_net:
-      name: "{{ vpc_name }}"
-      cidr_block: "{{ vpcCidrBlock }}"
-      region: "{{ region }}"
-      dns_support: "yes"
-      dns_hostnames: "yes"
-      tenancy: "default"
-      state: "{{ state }}"
-      resource_tags:
-        Name: "{{ vpc_name }}"
-    register: vpc_result
+    - name: Create Subnet priv
+      ec2_vpc_subnet:
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}"
+        az: "{{ zone }}"  
+        cidr: "{{ subNetCidrBlock }}"
+        map_public: "yes"
+        resource_tags:
+          Name: "{{ subnet_name }}"
+      register: subnet_result
+
+    - name: Create Subnet priv2
+      ec2_vpc_subnet:
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}"
+        az: "{{ zone }}"  
+        cidr: "{{ subNetCidrBlock2 }}"
+        map_public: "yes"
+        resource_tags:
+          Name: "{{ subnet_name }} 2"
+      register: subnet_result
+
+    - name: Create Subnet priv3
+      ec2_vpc_subnet:
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}"
+        az: "{{ zone2 }}"  
+        cidr: "{{ subNetCidrBlock3 }}"
+        map_public: "yes"
+        resource_tags:
+          Name: "{{ subnet_name }} 3"
+      register: subnet_result
+
+    - name: Create Subnet priv4
+      ec2_vpc_subnet:
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}"
+        az: "{{ zone2 }}"  
+        cidr: "{{ subNetCidrBlock4}}"
+        map_public: "yes"
+        resource_tags:
+          Name: "{{ subnet_name }} 4"
+      register: subnet_result
+
+    - name: Create Security Group
+      ec2_group:  
+        name: "{{ security_group_name }}"
+        description: "{{ security_group_name }}"
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}"
+        tags:
+          Name: "{{ security_group_name  }}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: "{{ portCidrBlock }}"
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: "{{ portCidrBlock }}"
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "{{ portCidrBlock }}"
+        rules_egress:
+                - proto: tcp
+                  from_port: 80
+                  to_port: 80
+                  cidr_ip: "{{ portCidrBlock }}"
+                - proto: tcp
+                  from_port: 443
+                  to_port: 443
+                  cidr_ip: "{{ portCidrBlock }}"
+                - proto: tcp
+                  from_port: 22
+                  to_port: 22
+                  cidr_ip: "{{ portCidrBlock }}"
+      register: security_group_result
