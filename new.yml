@@ -1,0 +1,47 @@
+---
+- hosts: all:localhost  # Place where we are running Ansible
+  connection: local # Connection 
+  gather_facts: no
+
+  # Variables
+  vars:
+    # ansible_python_interpreter: /usr/bin/python3
+    # Default Names
+    title: "Demo"
+    vpc_name: "{{ title }} VPC"
+    igw_name: "{{ title }} IGW"
+    subnet_name: "{{ title }} Subnet"
+    acl_name: "{{ title }} ACL"
+    instance_name: "{{ title }} Instance" 
+    security_group_name: "{{ title }} Security Group"
+    route_table_name: "{{ title }} Route Table"
+
+    # Default values for CIDR Blocks
+    vpcCidrBlock: "10.0.0.0/16"
+    subNetCidrBlock: "10.0.1.0/24"
+    portCidrBlock: "0.0.0.0/0"
+    destinationCidrBlock: "0.0.0.0/0"
+
+    # State
+    state: "present"
+
+    # Default value of AZ & Regio
+    zone: "us-west-1a"
+    region: "us-west-1"
+
+  # List of tasks
+  tasks:
+    
+  # Creating VPC
+  - name: Create VPC
+    ec2_vpc_net:
+      name: "{{ vpc_name }}"
+      cidr_block: "{{ vpcCidrBlock }}"
+      region: "{{ region }}"
+      dns_support: "yes"
+      dns_hostnames: "yes"
+      tenancy: "default"
+      state: "{{ state }}"
+      resource_tags:
+        Name: "{{ vpc_name }}"
+    register: vpc_result

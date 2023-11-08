@@ -1,0 +1,49 @@
+- hosts: all:localhost
+  connection: local
+  gather_facts: false
+  # tasks:
+  # - import_role:
+  #     name: vpc
+  vars:
+  ansible_python_interpreter: /usr/bin/python3
+  title: "Karim"
+  vpc_name: "{{title}}-VPC"
+  igw_name: "{{title}}-IGW"
+  subnet_pub_name: "{{title}}-Subnet-pub1"
+  subnet_pub2_name: "{{title}}-Subnet-pub2"
+  subnet_priv_name: "{{title}}-Subnet-priv1"
+  subnet_priv2_name: "{{title}}-Subnet-priv2"
+  subnet_priv3_name: "{{title}}-Subnet-priv3"
+  subnet_priv4_name: "{{title}}-Subnet-priv4"
+  acl_name: "{{title}}-ACL"
+  instance_name: "{{title}}-Instance" 
+  security_group_name: "{{title}}-Security-Group"
+  route_table_name: "{{title}}-Route-Table"
+
+  vpcCidrBlock: "10.0.0.0/16"
+  subNetCidrBlock: "10.0.20.0/24"
+  subNetCidrBlock2: "10.0.39.0/24"
+  subNetCidrBlockPriv: "10.0.40.0/24"
+  subNetCidrBlockPriv2: "10.0.59.0/24"
+  subNetCidrBlockPriv3: "10.0.60.0/24"
+  subNetCidrBlockPriv4: "10.0.79.0/24"
+  portCidrBlock: "0.0.0.0/0"
+  destinationCidrBlock: "0.0.0.0/0"
+
+  state: "present"
+  zone: "us-east-1a"
+  region: "us-east-1"
+
+  tasks:
+  - name: Create VPC
+    ec2_vpc_net:
+      name: "{{ vpc_name }}"
+      cidr_block: "{{ vpcCidrBlock }}"
+      region: "{{ region }}"
+      dns_support: "yes"
+      dns_hostnames: "yes"
+      tenancy: "default"
+      state: "{{ state }}"
+      resource_tags:
+        Name: "{{ vpc_name }}"
+      register: vpc_result
