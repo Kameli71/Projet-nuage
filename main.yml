@@ -1,0 +1,27 @@
+---
+# - name: NAT Gateway Provisioning
+- hosts: all:localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    - vars.yml
+
+  tasks:
+  - name: Create Process
+    include_role:
+      name: "{{ item }}"
+    with_items:
+      - aws-natgw
+    tags: [ 'never', 'create' ]
+
+  - name: Rollback Process
+    include_role:
+      name: "{{ item }}"
+    with_items:
+      - aws-natgw
+    tags: [ 'never', 'rollback' ]
+
+  - include: create.yml
+    tags: create
+  - include: rollback.yml
+    tags: rollback

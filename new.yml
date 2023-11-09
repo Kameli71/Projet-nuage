@@ -11,9 +11,10 @@
     vpc_id: "vpc-042a2b49f1cc34859"
     igw_name: "{{ title }} IGW"
     subnet_name: "{{ title }} Subnet priv"
-    acl_name: "{{ title }} ACL"
+    acl_name: "{{ title }} ACL VPC-C(NE PAS SUPPRIMER)"
     instance_name: "{{ title }} Instance Infra" 
     security_group_name: "{{ title }} Security Group Infra"
+    nat_name : "{{ title }} NAT VPC-C (Ne pas supprimer)"
     route_table_name: "{{ title }} Route Table Infra"
 
     # Default values for CIDR Blocks
@@ -57,7 +58,7 @@
         map_public: "yes"
         resource_tags:
           Name: "{{ subnet_name }} 2"
-      register: subnet_result
+      register: subnet_result1
 
     - name: Create Subnet priv3
       ec2_vpc_subnet:
@@ -69,7 +70,7 @@
         map_public: "yes"
         resource_tags:
           Name: "{{ subnet_name }} 3"
-      register: subnet_result
+      register: subnet_result2
 
     - name: Create Subnet priv4
       ec2_vpc_subnet:
@@ -81,7 +82,7 @@
         map_public: "yes"
         resource_tags:
           Name: "{{ subnet_name }} 4"
-      register: subnet_result
+      register: subnet_result3
 
     - name: Create Security Group
       ec2_group:  
@@ -119,3 +120,80 @@
                   to_port: 22
                   cidr_ip: "{{ portCidrBlock }}"
       register: security_group_result
+
+    - name: Create Network ACLs
+      ec2_vpc_nacl:
+        name: "{{ acl_name }}"
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}" 
+        subnets: [ "{{ subnet_result.subnet.id }}" ]
+        tags:
+          Name: "{{ acl_name }}"
+        ingress:
+        # rule no, protocol, allow/deny, cidr, icmp_type, icmp_code,             port from, port to
+          - [100, 'tcp', 'allow', '0.0.0.0/0', null, null, 0, 65535]
+          
+        # rule no, protocol, allow/deny, cidr, icmp_type, icmp_code, port from, port to
+        egress:
+          - [100, 'all', 'allow', '0.0.0.0/0', null, null, 0, 65535]
+
+    - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
+      ec2_vpc_nat_gateway:
+        state: present
+        subnet_id: subnet-0f8047291967c7570
+        eip_address: 52.213.250.29
+        wait: true
+        region: "{{ region }}"
+        if_exist_do_not_create: true
+        tags:
+          Name: Nat-VPC-C
+      register: new_nat_gateway
+    
+    - name: Create Route Table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc_id }}" 
+        region: "{{ region }}"
+        state: "{{ state }}" 
+        tags:
+          Name: "{{ route_table_name }}"
+        subnets: [ "{{ subnet_result.subnet.id }}" ]
+        routes:
+          - dest: "{{ destinationCidrBlock }}" 
+            nat_gateway_id: "{{ new_nat_gateway.nat_gateway_id }}"
+      register: public_route_table
+
+    - name: Create EC2 Instance
+      ec2:
+        instance_type: t3.small
+        image: ami-0e309a5f3a6dd97ea
+        wait: yes
+        region: "{{ region }}"
+        group: "{{ security_group_name }}"
+        key_name: karim-new-key
+        count: 1
+        vpc_subnet_id: "{{ subnet_result.subnet.id }}"
+        assign_public_ip: no
+        instance_tags:
+          Name: "{{ instance_name }}"
+          entity: numfactory
+          ephemere: oui
+          owner: kkameli@thenuumfactory.fr
+      register: ec2_result
+    # - name: Create EC2 Instance 2
+      # ec2:
+      #   instance_type: t3.small
+      #   image: ami-0e309a5f3a6dd97ea
+      #   wait: yes
+      #   region: "{{ region }}"
+      #   group: "{{ security_group_name }}"
+      #   key_name: karim-new-key
+      #   count: 1
+      #   vpc_subnet_id: "{{ subnet_result1.subnet.id }}"
+      #   assign_public_ip: no
+      #   instance_tags:
+      #     Name: "{{ instance_name }}"
+      #     entity: numfactory
+      #     ephemere: oui
+      #     owner: kkameli@thenuumfactory.fr
+      # register: ec2_result2
