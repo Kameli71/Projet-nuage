@@ -164,22 +164,41 @@
       register: public_route_table
 
     - name: Create EC2 Instance
-      ec2:
+      ec2_instance:
+        name: "{{ instance_name }}"
         instance_type: t3.small
-        image: ami-0e309a5f3a6dd97ea
+        image_id: ami-0e309a5f3a6dd97ea
         wait: yes
-        region: "{{ region }}"
-        group: "{{ security_group_name }}"
+        aws_region: "{{ region }}"
+        security_group: "{{ security_group_result.group_id }}"
         key_name: karim-new-key
         count: 1
         vpc_subnet_id: "{{ subnet_result.subnet.id }}"
-        assign_public_ip: no
-        instance_tags:
-          Name: "{{ instance_name }}"
+        network:
+          assign_public_ip: no
+        tags:
           entity: numfactory
           ephemere: oui
           owner: kkameli@thenuumfactory.fr
       register: ec2_result
+    
+    # - name: Create EC2 Instance
+    #   ec2_instance:
+    #     instance_type: t3.small
+    #     image_id: ami-0e309a5f3a6dd97ea
+    #     wait: yes
+    #     region: "{{ region }}"
+    #     group: "{{ security_group_name }}"
+    #     key_name: karim-new-key
+    #     count: 1
+    #     vpc_subnet_id: "{{ subnet_result.subnet.id }}"
+    #     assign_public_ip: no
+    #     instance_tags:
+    #       Name: "{{ instance_name }}"
+    #       entity: numfactory
+    #       ephemere: oui
+    #       owner: kkameli@thenuumfactory.fr
+    #   register: ec2_result
     # - name: Create EC2 Instance 2
       # ec2:
       #   instance_type: t3.small
