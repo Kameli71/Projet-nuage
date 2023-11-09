@@ -36,6 +36,12 @@
 
   # List of tasks
   tasks:
+    - name: Get my current IP address
+      uri:
+        url: http://checkip.amazonaws.com/
+        return_content: yes
+      register: my_ip
+
     - name: Create Subnet priv
       ec2_vpc_subnet:
         vpc_id: "{{ vpc_id }}" 
@@ -97,15 +103,15 @@
           - proto: tcp
             from_port: 80
             to_port: 80
-            cidr_ip: "{{ portCidrBlock }}"
+            cidr_ip: "{{ my_ip.content | replace('\n', '') }}/32"
           - proto: tcp
             from_port: 443
             to_port: 443
-            cidr_ip: "{{ portCidrBlock }}"
+            cidr_ip: "{{ my_ip.content | replace('\n', '') }}/32"
           - proto: tcp
             from_port: 22
             to_port: 22
-            cidr_ip: "{{ portCidrBlock }}"
+            cidr_ip: "{{ my_ip.content | replace('\n', '') }}/32"
         rules_egress:
                 - proto: tcp
                   from_port: 80
@@ -181,38 +187,36 @@
           ephemere: oui
           owner: kkameli@thenuumfactory.fr
       register: ec2_result
+
+    - name: Create EC2 Instance 2
+      ec2_instance:
+        name: "{{ instance_name }} slave"
+        instance_type: t3.small
+        image_id: ami-0e309a5f3a6dd97ea
+        wait: yes
+        aws_region: "{{ region }}"
+        security_group: "{{ security_group_result.group_id }}"
+        key_name: karim-new-key
+        count: 1
+        vpc_subnet_id: "{{ subnet_result2.subnet.id }}"
+        network:
+          assign_public_ip: no
+        tags:
+          entity: numfactory
+          ephemere: oui
+          owner: kkameli@thenuumfactory.fr
+      register: ec2_result2
     
-    # - name: Create EC2 Instance
-    #   ec2_instance:
-    #     instance_type: t3.small
-    #     image_id: ami-0e309a5f3a6dd97ea
-    #     wait: yes
+    # - name: Create the ELB only listening over port 80
+    #   ec2_elb_lb:
+    #   name: Karim-load-balancer
+    #     state: present
     #     region: "{{ region }}"
-    #     group: "{{ security_group_name }}"
-    #     key_name: karim-new-key
-    #     count: 1
-    #     vpc_subnet_id: "{{ subnet_result.subnet.id }}"
-    #     assign_public_ip: no
-    #     instance_tags:
-    #       Name: "{{ instance_name }}"
-    #       entity: numfactory
-    #       ephemere: oui
-    #       owner: kkameli@thenuumfactory.fr
-    #   register: ec2_result
-    # - name: Create EC2 Instance 2
-      # ec2:
-      #   instance_type: t3.small
-      #   image: ami-0e309a5f3a6dd97ea
-      #   wait: yes
-      #   region: "{{ region }}"
-      #   group: "{{ security_group_name }}"
-      #   key_name: karim-new-key
-      #   count: 1
-      #   vpc_subnet_id: "{{ subnet_result1.subnet.id }}"
-      #   assign_public_ip: no
-      #   instance_tags:
-      #     Name: "{{ instance_name }}"
-      #     entity: numfactory
-      #     ephemere: oui
-      #     owner: kkameli@thenuumfactory.fr
-      # register: ec2_result2
+    #     zones:
+    #       - "{{ zone }}"
+    #       - "{{ zone2 }}"
+    #     listeners:
+    #       - protocol: http
+    #         load_balancer_port: 80
+    #         instance_port: 80
+    #   register: elb
