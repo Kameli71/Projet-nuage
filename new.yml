@@ -8,7 +8,7 @@
     ansible_python_interpreter: /usr/bin/python3
     # Default Names
     title: "Karim"
-    vpc_id: "vpc-042a2b49f1cc34859"
+    vpc_id: "vpc-07a737571d3a10d7d"
     igw_name: "{{ title }} IGW"
     subnet_name: "{{ title }} Subnet priv"
     acl_name: "{{ title }} ACL VPC-C(NE PAS SUPPRIMER)"
@@ -30,9 +30,9 @@
     state: "present"
 
     # Default value of AZ & Regio
-    zone: "eu-west-1a"
-    zone2: "eu-west-1b"
-    region: "eu-west-1"
+    zone: ""us-east-1a"
+    zone2: "us-east-1b"
+    region: "us-east-1"
 
   # List of tasks
   tasks:
@@ -113,19 +113,19 @@
             to_port: 22
             cidr_ip: "{{ my_ip.content | replace('\n', '') }}/32"
         rules_egress:
-                - proto: tcp
-                  from_port: 80
-                  to_port: 80
-                  cidr_ip: "{{ portCidrBlock }}"
-                - proto: tcp
-                  from_port: 443
-                  to_port: 443
-                  cidr_ip: "{{ portCidrBlock }}"
-                - proto: tcp
-                  from_port: 22
-                  to_port: 22
-                  cidr_ip: "{{ portCidrBlock }}"
-      register: security_group_result
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: "{{ portCidrBlock }}"
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: "{{ portCidrBlock }}"
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "{{ portCidrBlock }}"
+register: security_group_result
 
     - name: Create Network ACLs
       ec2_vpc_nacl:
@@ -147,8 +147,8 @@
     - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
       ec2_vpc_nat_gateway:
         state: present
-        subnet_id: subnet-0f8047291967c7570
-        eip_address: 52.213.250.29
+        subnet_id: subnet-079575ffbbf079079
+        eip_address: 34.228.121.156
         wait: true
         region: "{{ region }}"
         if_exist_do_not_create: true
@@ -173,7 +173,7 @@
       ec2_instance:
         name: "{{ instance_name }}"
         instance_type: t3.small
-        image_id: ami-0e309a5f3a6dd97ea
+        image_id: ami-05c13eab67c5d8861
         wait: yes
         aws_region: "{{ region }}"
         security_group: "{{ security_group_result.group_id }}"
@@ -192,7 +192,7 @@
       ec2_instance:
         name: "{{ instance_name }} slave"
         instance_type: t3.small
-        image_id: ami-0e309a5f3a6dd97ea
+        image_id: ami-05c13eab67c5d8861
         wait: yes
         aws_region: "{{ region }}"
         security_group: "{{ security_group_result.group_id }}"
