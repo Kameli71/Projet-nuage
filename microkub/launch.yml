@@ -1,0 +1,33 @@
+- name: provisioning resources
+  hosts: all:localhost
+  gather_facts: yes
+  become: yes
+
+  vars:
+    pip_package: python3-pip
+    pip_executable: pip3
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Create a k8s namespace
+      k8s:
+        name: karim
+        api_version: v1
+        kind: Namespace
+        state: present
+    
+    - name: Create a Deployment by reading the definition from a local file
+      k8s:
+        state: present
+        src: deployement.yml
+
+    - name: Create a Service with serice.yml file
+      k8s:
+        state: present
+        src: service.yml
+    
+    - name: Create a volume persistent with vpc.yml file
+      k8s:
+        state: present
+        src: vpc.yml
+    

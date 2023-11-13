@@ -1,15 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    name: cart
-    visualize: "true"
   name: cart
 spec:
-  ports:
-    - port: 8080
-      targetPort: 8000
   selector:
-    name: cart
-  sessionAffinity: None
-  type: NodePort
+    app: cart
+    tier: cart
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: http
