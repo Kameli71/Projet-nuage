@@ -1,0 +1,48 @@
+---
+- name: Installing boto & boto3 on local system
+  pip:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ python_pkgs }}"
+
+- name: Create EC2 Instance
+  ec2_instance:
+    name: "{{ item }}"
+    instance_type: "{{ instance_flavour }}"
+    image_id: "{{ ami_id }}"
+    wait: yes
+    aws_region: "{{ region_name }}"
+    security_group: "{{ sg_id }}"
+    key_name: "{{ keypair }}"
+    count: 1
+    vpc_subnet_id: "{{ subnet_id }}"
+    network:
+      assign_public_ip: no
+    tags:
+      entity: numfactory
+      ephemere: oui
+      owner: kkameli@thenuumfactory.fr
+  register: ec2_result
+  loop: "{{ instance_tag }}"
+
+- name: Add 1st instance to host group ec2_master
+  add_host:
+    hostname: "{{ ec2.results[0].instances[0].public_ip }}"
+    groupname: ec2_master
+
+- name: Add 2nd instance to host group ec2_slave
+  add_host:
+    hostname: "{{ ec2.results[1].instances[0].public_ip }}"
+    groupname: ec2_slave
+
+- name: Add 3rd instance to host group ec2_slave
+  add_host:
+    hostname: "{{ ec2.results[2].instances[0].public_ip }}"
+    groupname: ec2_slave
+
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ ec2.results[2].instances[0].public_dns_name }}"
+    port: 22
+    state: started
+# tasks file for ec2

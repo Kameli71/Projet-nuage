@@ -30,7 +30,7 @@
     state: "present"
 
     # Default value of AZ & Regio
-    zone: ""us-east-1a"
+    zone: "us-east-1a"
     zone2: "us-east-1b"
     region: "us-east-1"
 
@@ -125,7 +125,7 @@
             from_port: 22
             to_port: 22
             cidr_ip: "{{ portCidrBlock }}"
-register: security_group_result
+      register: security_group_result
 
     - name: Create Network ACLs
       ec2_vpc_nacl:
@@ -147,7 +147,7 @@ register: security_group_result
     - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
       ec2_vpc_nat_gateway:
         state: present
-        subnet_id: subnet-079575ffbbf079079
+        subnet_id: subnet-09c277a66caf88663
         eip_address: 34.228.121.156
         wait: true
         region: "{{ region }}"
@@ -169,43 +169,43 @@ register: security_group_result
             nat_gateway_id: "{{ new_nat_gateway.nat_gateway_id }}"
       register: public_route_table
 
-    - name: Create EC2 Instance
-      ec2_instance:
-        name: "{{ instance_name }}"
-        instance_type: t3.small
-        image_id: ami-05c13eab67c5d8861
-        wait: yes
-        aws_region: "{{ region }}"
-        security_group: "{{ security_group_result.group_id }}"
-        key_name: karim-new-key
-        count: 1
-        vpc_subnet_id: "{{ subnet_result.subnet.id }}"
-        network:
-          assign_public_ip: no
-        tags:
-          entity: numfactory
-          ephemere: oui
-          owner: kkameli@thenuumfactory.fr
-      register: ec2_result
+    # - name: Create EC2 Instance
+    #   ec2_instance:
+    #     name: "{{ instance_name }}"
+    #     instance_type: t3.small
+    #     image_id: ami-05c13eab67c5d8861
+    #     wait: yes
+    #     aws_region: "{{ region }}"
+    #     security_group: "{{ security_group_result.group_id }}"
+    #     key_name: karim-new-key
+    #     count: 1
+    #     vpc_subnet_id: "{{ subnet_result.subnet.id }}"
+    #     network:
+    #       assign_public_ip: no
+    #     tags:
+    #       entity: numfactory
+    #       ephemere: oui
+    #       owner: kkameli@thenuumfactory.fr
+    #   register: ec2_result
 
-    - name: Create EC2 Instance 2
-      ec2_instance:
-        name: "{{ instance_name }} slave"
-        instance_type: t3.small
-        image_id: ami-05c13eab67c5d8861
-        wait: yes
-        aws_region: "{{ region }}"
-        security_group: "{{ security_group_result.group_id }}"
-        key_name: karim-new-key
-        count: 1
-        vpc_subnet_id: "{{ subnet_result2.subnet.id }}"
-        network:
-          assign_public_ip: no
-        tags:
-          entity: numfactory
-          ephemere: oui
-          owner: kkameli@thenuumfactory.fr
-      register: ec2_result2
+    # - name: Create EC2 Instance 2
+    #   ec2_instance:
+    #     name: "{{ instance_name }} slave"
+    #     instance_type: t3.small
+    #     image_id: ami-05c13eab67c5d8861
+    #     wait: yes
+    #     aws_region: "{{ region }}"
+    #     security_group: "{{ security_group_result.group_id }}"
+    #     key_name: karim-new-key
+    #     count: 1
+    #     vpc_subnet_id: "{{ subnet_result2.subnet.id }}"
+    #     network:
+    #       assign_public_ip: no
+    #     tags:
+    #       entity: numfactory
+    #       ephemere: oui
+    #       owner: kkameli@thenuumfactory.fr
+    #   register: ec2_result2
     
     # - name: Create the ELB only listening over port 80
     #   ec2_elb_lb:
