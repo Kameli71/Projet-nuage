@@ -13,6 +13,6 @@ sg_id: sg-01f700cf07cd0d65b
 region_name: us-east-1
 subnet_id: subnet-0c679ca00d01a9277
 ami_id: ami-05c13eab67c5d8861
-keypair: karim-new-key.pem
-instance_flavour: t3.small
+keypair: karim-new-key
+instance_flavour: t3.micro
 

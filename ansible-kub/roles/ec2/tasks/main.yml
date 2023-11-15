@@ -17,27 +17,27 @@
     count: 1
     vpc_subnet_id: "{{ subnet_id }}"
     network:
-      assign_public_ip: no
+      assign_public_ip: yes
     tags:
       entity: numfactory
       ephemere: oui
       owner: kkameli@thenuumfactory.fr
-  register: ec2_result
+  register: ec2
   loop: "{{ instance_tag }}"
 
 - name: Add 1st instance to host group ec2_master
   add_host:
-    hostname: "{{ ec2.results[0].instances[0].public_ip }}"
+    hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"
     groupname: ec2_master
 
 - name: Add 2nd instance to host group ec2_slave
   add_host:
-    hostname: "{{ ec2.results[1].instances[0].public_ip }}"
+    hostname: "{{ ec2.results[1].instances[0].public_ip_address }}"
     groupname: ec2_slave
 
 - name: Add 3rd instance to host group ec2_slave
   add_host:
-    hostname: "{{ ec2.results[2].instances[0].public_ip }}"
+    hostname: "{{ ec2.results[2].instances[0].public_ip_address }}"
     groupname: ec2_slave
 
 - name: Wait for SSH to come up
