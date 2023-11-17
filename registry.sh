@@ -17,3 +17,4 @@ cd ansible-kub/roles
 ansible-galaxy init ec2
 ansible-galaxy init k8s_master
 ansible-galaxy init k8s_slave
+chmod 400 ansible.pem
