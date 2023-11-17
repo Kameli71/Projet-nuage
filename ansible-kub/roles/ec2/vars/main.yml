@@ -1,9 +1,9 @@
 ---
 # vars file for ec2
 instance_tag:
-        - master
-        - slave1
-        - slave2
+        - Karim-Cluster-master
+        - Karim-Cluster-slave1
+        - Karim-Cluster-slave2
 
 python_pkgs:
         - boto
