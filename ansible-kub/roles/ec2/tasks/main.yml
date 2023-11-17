@@ -16,6 +16,7 @@
     key_name: "{{ keypair }}"
     count: 1
     vpc_subnet_id: "{{ subnet_id }}"
+    state: present
     network:
       assign_public_ip: yes
     tags:

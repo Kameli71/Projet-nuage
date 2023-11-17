@@ -147,13 +147,13 @@
     - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
       ec2_vpc_nat_gateway:
         state: present
-        subnet_id: subnet-09c277a66caf88663
-        eip_address: 34.228.121.156
+        subnet_id: subnet-0ab5d5c734e5373b0
+        eip_address: 52.207.181.166
         wait: true
         region: "{{ region }}"
         if_exist_do_not_create: true
         tags:
-          Name: Nat-VPC-C
+          Name: Karim-eip
       register: new_nat_gateway
     
     - name: Create Route Table
