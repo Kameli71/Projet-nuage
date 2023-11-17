@@ -1,5 +1,5 @@
 ---
-# tasks file for k8s_master
+#tasks file for k8s_master
 - name: Add kubeadm repositories on Master Node
   yum_repository:
     name: kube
@@ -43,13 +43,18 @@
   command: sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem
 
 - name: Setting up kubectl on Master Node
-  shell: |
-      mkdir -p $HOME/.kube && \
-      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
-      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  shell: 
+    cmd: |
+      mkdir /home/ec2-user/.kube
+      sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
+      sudo chown ec2-user:ec2-user /home/ec2-user/.kube/config
 
 - name: Deploying Flannel on Master Node
-  command: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+  command:
+    cmd: |
+      echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
+      sudo sysctl -p
+      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
 
 - name: Creating token for Slave
   command: kubeadm token create  --print-join-command
