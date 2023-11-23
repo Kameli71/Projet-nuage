@@ -1,10 +1,9 @@
 ---
-#tasks file for k8s_master
 - name: Add kubeadm repositories on Master Node
   yum_repository:
     name: kube
     description: Kubernetes repo
-    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
+    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
     enabled: 1
     gpgcheck: 1
     gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
@@ -16,6 +15,25 @@
       - kubeadm
       - iproute-tc
     state: present
+
+- name : ufw enabled
+  community.general.ufw:
+    state: "enabled"
+    policy: "deny"
+    logging: "on"
+
+- name: add port
+  community.general.ufw:
+    rule: "allow"
+    port: "{{ item }}"
+    proto: "tcp"
+  with_items:
+    - 6443
+    - 2379-2380
+    - 10250
+    - 10252
+    - 10255
+    - 10251
 
 - name: Staring & enabling Docker & kubelet on Master Node
   service:
@@ -40,30 +58,41 @@
     state: restarted
 
 - name: Initializing k8s cluster
-  command: sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem
+  command: kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem
+  register: kubeadm_output
 
-- name: Setting up kubectl on Master Node
-  shell: 
-    cmd: |
-      mkdir /home/ec2-user/.kube
-      sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
-      sudo chown ec2-user:ec2-user /home/ec2-user/.kube/config
+- name: Set up kubectl for the current user
+  command: "{{ item }}"
+  with_items:
+    - "mkdir /home/ec2-user/.kube"
+    - "cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config"
+    - "chown ec2-user:ec2-user /home/ec2-user/.kube/config"
 
-- name: Deploying Flannel on Master Node
-  command:
-    cmd: |
-      kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+- name: Install Calico network plugin
+  command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+# - name: Setting up kubectl on Master Node
+#   shell: 
+#     cmd: |
+#       mkdir /home/ec2-user/.kube
+#       sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
+#       sudo chown ec2-user:ec2-user /home/ec2-user/.kube/configchown ec2-user:ec2-user /home/ec2-user/.kube/config
+
+# - name: Deploying Flannel on Master Node
+#   command:
+#     cmd: |
+#       sysctl --system
+#       kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 
 # - name: Generating token for Slave
 #   command: kubeadm token generate
 #   register: generate
 
-- name: Creating token for Slave
-  command: kubeadm token create --print-join-command --v=5
-  register: token
+# - name: Creating token for Slave
+#   command: kubeadm token create --print-join-command --v=5
+#   register: token
 
-- name: Cleaning Caches on RAM
-  shell: echo 3 > /proc/sys/vm/drop_caches
+# - name: Cleaning Caches on RAM
+#   shell: echo 3 > /proc/sys/vm/drop_caches
 
   # - name: Install Docker
   #   snap:
