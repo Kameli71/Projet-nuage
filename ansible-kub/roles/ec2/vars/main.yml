@@ -1,6 +1,7 @@
 ---
 # vars file for ec2
 instance_tag:
+        - Karim-nfs-system
         - Karim-Cluster-master
         - Karim-Cluster-slave1
         - Karim-Cluster-slave2
@@ -9,7 +10,7 @@ python_pkgs:
         - boto
         - boto3
 
-sg_name : Karim-Cluste-test
+sg_name : Karim-Cluster-test
 sg_id: sg-01f700cf07cd0d65b
 region_name: us-east-1
 subnet_id: subnet-0a51081c527f1fb77
