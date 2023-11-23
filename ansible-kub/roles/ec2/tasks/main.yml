@@ -26,6 +26,11 @@
       - 31000
       cidr_ip: 0.0.0.0/0
       rule_desc: allow all on port 31000
+    - proto: tcp
+      ports:
+      - 8080
+      cidr_ip: 0.0.0.0/0
+      rule_desc: allow all on port 8080
     rules_egress:
     - proto: all
       cidr_ip: 0.0.0.0/0
@@ -76,7 +81,7 @@
   ansible.builtin.wait_for:
     host: "{{ ec2.results[3].instances[0].public_ip_address }}"
     port: 22
-    state: present
+    state: started
 
 # - name: Add 1st instance to host group ec2_master
 #   ansible.builtin.add_host:

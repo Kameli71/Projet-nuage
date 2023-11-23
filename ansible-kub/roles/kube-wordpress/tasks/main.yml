@@ -12,7 +12,7 @@
     dest: "/root/K8s-WordPress/storage.yml"
     
 - name: Deploying Wordpress on Kubernetes
-  command: sudo kubectl create -k /root/K8s-WordPress/
+  command: kubectl create -k /root/K8s-WordPress/
 
 - name: Go to this below URL to access WordPress after few seconds
   debug:
