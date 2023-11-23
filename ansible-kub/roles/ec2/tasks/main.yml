@@ -5,6 +5,21 @@
     state: present
   loop: "{{ python_pkgs }}"
 
+
+- name: Creating Security Group for K8s Cluster
+  ec2_group:
+    name: "{{ sg_name }}"
+    vpc_id: "{{ vpc_id }}" 
+    description: Security Group for allowing all port
+    region: "{{ region_name }}"
+    rules:
+    - proto: all
+      cidr_ip: 0.0.0.0/0
+    rules_egress:
+    - proto: all
+      cidr_ip: 0.0.0.0/0
+  register: sg
+
 - name: Create EC2 Instance
   amazon.aws.ec2_instance:
     name: "{{ item }}"
@@ -12,13 +27,13 @@
     image_id: "{{ ami_id }}"
     wait: true
     aws_region: "{{ region_name }}"
-    security_group: "{{ sg_id }}"
+    security_group: "{{ sg.group_id }}"
     key_name: "{{ keypair }}"
     count: 1
     vpc_subnet_id: "{{ subnet_id }}"
     state: present
     network:
-      assign_public_ip: false
+      assign_public_ip: true
     tags:
       entity: numfactory
       ephemere: oui
@@ -28,22 +43,22 @@
 
 - name: Add 1st instance to host group ec2_master
   ansible.builtin.add_host:
-    hostname: "{{ ec2.results[0].instances[0].private_ip_address }}"
+    hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"
     groupname: ec2_master
 
 - name: Add 2nd instance to host group ec2_slave
   ansible.builtin.add_host:
-    hostname: "{{ ec2.results[1].instances[0].private_ip_address }}"
+    hostname: "{{ ec2.results[1].instances[0].public_ip_address }}"
     groupname: ec2_slave
 
 - name: Add 3rd instance to host group ec2_slave
   ansible.builtin.add_host:
-    hostname: "{{ ec2.results[2].instances[0].private_ip_address }}"
+    hostname: "{{ ec2.results[2].instances[0].public_ip_address }}"
     groupname: ec2_slave
 
 - name: Wait for SSH to come up
   ansible.builtin.wait_for:
-    host: "{{ ec2.results[2].instances[0].private_ip_address }}"
+    host: "{{ ec2.results[2].instances[0].public_ip_address }}"
     port: 22
     state: present
 # tasks file for ec2
