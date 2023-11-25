@@ -1,0 +1,8 @@
+- hosts: all:localhost
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Running EC2 Role
+      include_role:
+        name: ec2

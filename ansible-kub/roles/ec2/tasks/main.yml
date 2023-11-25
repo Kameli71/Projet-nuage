@@ -5,20 +5,24 @@
     state: present
   loop: "{{ python_pkgs }}"
 
+- name: Creating Security Group for K8s Cluster Mutual
+  ec2_group:
+    name: "{{ sg_name1 }}"
+    vpc_id: "{{ vpc_id }}" 
+    description: Security Group mutual cluster
+    region: "{{ region_name }}"
+  register: sg
 
-- name: Creating Security Group for K8s Cluster
+- name: Creating Security Group for K8s Cluster Worker
   ec2_group:
     name: "{{ sg_name }}"
     vpc_id: "{{ vpc_id }}" 
     description: Security Group for allowing all port
     region: "{{ region_name }}"
     rules:
-    - proto: all
-      group_name: "{{ sg_name }}"
-      rule_desc: allow all traffic from instances connected to this security group
     - proto: tcp
-      ports:
-      - 22
+      from_port: 22
+      to_port: 22
       cidr_ip: 0.0.0.0/0
       rule_desc: allow all on port 22
     - proto: tcp
@@ -27,23 +31,92 @@
       cidr_ip: 0.0.0.0/0
       rule_desc: allow all on port 31000
     - proto: tcp
-      ports:
-      - 8080
+      from_port: 10250
+      to_port: 10250
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      from_port: 30000
+      to_port: 32767
       cidr_ip: 0.0.0.0/0
-      rule_desc: allow all on port 8080
+    - proto: tcp
+      from_port: 8472
+      to_port: 8472
+      group_name: "{{ sg_name1 }}"
     rules_egress:
     - proto: all
       cidr_ip: 0.0.0.0/0
-  register: sg
+  register: sgworker
 
-- name: Create EC2 Instance
+- name: Creating Security Group for K8s Cluster Master
+  ec2_group:
+    name: "{{ sg_name2 }}"
+    vpc_id: "{{ vpc_id }}" 
+    description: Security Group for allowing all port
+    region: "{{ region_name }}"
+    rules:
+    - proto: tcp
+      from_port: 22
+      to_port: 22
+      cidr_ip: 0.0.0.0/0
+      rule_desc: allow all on port 22
+    - proto: tcp
+      from_port: 8080
+      to_port: 8080
+      cidr_ip: 0.0.0.0/0
+    - proto: tcp
+      from_port: 6443
+      to_port: 6443
+      cidr_ip: 0.0.0.0/0
+    - proto: tcp
+      from_port: 443
+      to_port: 443
+      cidr_ip: 0.0.0.0/0
+    - proto: tcp
+      from_port: 2380
+      to_port: 2380
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      ports:
+      - 31000
+      cidr_ip: 0.0.0.0/0
+      rule_desc: allow all on port 31000
+    - proto: tcp
+      from_port: 2379
+      to_port: 2379
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      from_port: 10250
+      to_port: 10250
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      from_port: 10251
+      to_port: 10251
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      from_port: 10252
+      to_port: 10252
+      group_name: "{{ sg_name1 }}"
+    - proto: tcp
+      from_port: 30000
+      to_port: 32767
+      cidr_ip: 0.0.0.0/0
+    - proto: udp
+      from_port: 8472
+      to_port: 8472
+      group_name: "{{ sg_name1 }}"
+    rules_egress:
+    - proto: all
+      cidr_ip: 0.0.0.0/0
+  register: sgmaster
+
+- name: Create EC2 Instance Master
   amazon.aws.ec2_instance:
-    name: "{{ item }}"
+    name: "Karim-Cluster-master"
     instance_type: "{{ instance_flavour }}"
     image_id: "{{ ami_id }}"
     wait: true
     aws_region: "{{ region_name }}"
-    security_group: "{{ sg.group_id }}"
+    security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
     key_name: "{{ keypair }}"
     count: 1
     vpc_subnet_id: "{{ subnet_id }}"
@@ -51,37 +124,103 @@
     network:
       assign_public_ip: true
     tags:
+      Role: master
+      environment: dev
+      Project: Karim-kube
       entity: numfactory
       ephemere: oui
       owner: kkameli@thenuumfactory.fr
   register: ec2
-  loop: "{{ instance_tag }}"
+  # loop: "{{ instance_tag }}"
+- name: Create EC2 Instance Worker-nfs
+  amazon.aws.ec2_instance:
+    name: "Karim-Cluster-worker-nfs"
+    instance_type: "{{ instance_flavour }}"
+    image_id: "{{ ami_id }}"
+    wait: true
+    aws_region: "{{ region_name }}"
+    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+    key_name: "{{ keypair }}"
+    count: 1
+    vpc_subnet_id: "{{ subnet_id }}"
+    state: present
+    network:
+      assign_public_ip: true
+    tags:
+      Role: worker-nfs
+      environment: dev
+      Project: Karim-kube
+      entity: numfactory
+      ephemere: oui
+      owner: kkameli@thenuumfactory.fr
+  register: ec22
 
-- name: Add 1st instance to host group nfs_node
-  ansible.builtin.add_host:
-    hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"
-    groupname: nfs_node
+- name: Create EC2 Instances Worker
+  amazon.aws.ec2_instance:
+    name: "Karim-Cluster-worker"
+    instance_type: "{{ instance_flavour }}"
+    image_id: "{{ ami_id }}"
+    wait: true
+    aws_region: "{{ region_name }}"
+    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+    key_name: "{{ keypair }}"
+    count: 2
+    vpc_subnet_id: "{{ subnet_id }}"
+    state: present
+    network:
+      assign_public_ip: true
+    tags:
+      Role: worker
+      environment: dev
+      Project: Karim-kube
+      entity: numfactory
+      ephemere: oui
+      owner: kkameli@thenuumfactory.fr
+  register: ec22
 
-- name: Add 2nd instance to host group ec2_master
-  ansible.builtin.add_host:
-    hostname: "{{ ec2.results[1].instances[0].public_ip_address }}"
-    groupname: ec2_master
+- name: Set static inventory inventory
+  shell: |
+    cat << EOF > /home/ec2-user/ansible/inventory/hosts.ini
+    172.31.91.243   ansible_user=ubuntu
+    172.31.87.143   ansible_user=ubuntu
+    172.31.90.30    ansible_user=ubuntu
+    172.31.92.110   ansible_user=ubuntu
+    EOF
 
-- name: Add 3rd instance to host group ec2_slave
-  ansible.builtin.add_host:
-    hostname: "{{ ec2.results[2].instances[0].public_ip_address }}"
-    groupname: ec2_slave
+- name: Set dynamic inventory
+  shell: |
+    PATH="$PATH:/usr/local/bin
+    export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
+    ANS_KEYPAIR="karim-new-key.pem"
+    export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
+    export ANSIBLE_HOST_KEY_CHECKING=False
+    sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
+    ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+# - name: Add 1st instance to host group nfs_node
+#   ansible.builtin.add_host:
+#     hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"
+#     groupname: nfs_node
 
-- name: Add 4th instance to host group ec2_slave
-  ansible.builtin.add_host:
-    hostname: "{{ ec2.results[3].instances[0].public_ip_address }}"
-    groupname: ec2_slave
+# - name: Add 2nd instance to host group ec2_master
+#   ansible.builtin.add_host:
+#     hostname: "{{ ec2.results[1].instances[0].public_ip_address }}"
+#     groupname: ec2_master
+
+# - name: Add 3rd instance to host group ec2_slave
+#   ansible.builtin.add_host:
+#     hostname: "{{ ec2.results[2].instances[0].public_ip_address }}"
+#     groupname: ec2_slave
+
+# - name: Add 4th instance to host group ec2_slave
+#   ansible.builtin.add_host:
+#     hostname: "{{ ec2.results[3].instances[0].public_ip_address }}"
+#     groupname: ec2_slave
     
-- name: Wait for SSH to come up
-  ansible.builtin.wait_for:
-    host: "{{ ec2.results[3].instances[0].public_ip_address }}"
-    port: 22
-    state: started
+# - name: Wait for SSH to come up
+#   ansible.builtin.wait_for:
+#     host: "{{ ec2.results[3].instances[0].public_ip_address }}"
+#     port: 22
+#     state: started
 
 # - name: Add 1st instance to host group ec2_master
 #   ansible.builtin.add_host:

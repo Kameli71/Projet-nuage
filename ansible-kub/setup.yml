@@ -1,19 +1,43 @@
-- hosts: all:localhost
-  become: yes
+- hosts: all
+  # become: yes
+  # gather_facts: no
   gather_facts: no
-
   tasks:
-    - name: Running EC2 Role
+    - name: change hostnames
+      shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
+
+    - name: swap off
+      shell: |
+        free -m
+        swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
+    - name: Enable the nodes to see bridged traffic
+      shell: |
+        cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
+        net.bridge.bridge-nf-call-ip6tables = 1
+        net.bridge.bridge-nf-call-iptables = 1
+        EOF
+        sysctl --system
+
+    - name: yum update 
+      shell: sudo yum update -y
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        group: docker
+  # tasks:
+  #   - name: Running EC2 Role
+  #     include_role:
+  #       name: ec2
+
+- hosts: worker-nsf
+  tasks:
+    - name: Running NFS Server Role
       include_role:
-        name: ec2
+        name: nfs-server
 
-# - hosts: nfs_node
-#   tasks:
-#     - name: Running NFS Server Role
-#       include_role:
-#         name: nfs-server
-
-- hosts: ec2_master
+- hosts: master
   gather_facts: no
   tasks:
     - name: Running K8s Master Role
