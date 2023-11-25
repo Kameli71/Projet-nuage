@@ -42,6 +42,11 @@
     enabled: yes
   loop: "{{ service_names }}"
 
+- name: Add ec2-user to docker group
+  user:
+    name: ec2-user
+    group: docker
+
 - name: Pulling the images of k8s master
   command: sudo kubeadm config images pull
 
