@@ -23,10 +23,6 @@
     - name: yum update 
       shell: sudo yum update -y
 
-  # tasks:
-  #   - name: Running EC2 Role
-  #     include_role:
-  #       name: ec2
 
 - hosts: role_worker_nfs
   become: true
@@ -43,7 +39,7 @@
       include_role:
         name: k8s_master
 
-- hosts: ec2_slave
+- hosts: role_worker
   become: true
   gather_facts: no
   tasks:
@@ -51,7 +47,7 @@
       include_role:
         name: k8s_slave
 
-- hosts: ec2_master
+- hosts: role_master
   become: true
   gather_facts: no
   tasks:

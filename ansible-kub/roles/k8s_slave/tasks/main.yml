@@ -45,8 +45,12 @@
 - name: Reloading sysctl on Slave Node
   command: sysctl --system
 
-- name: Joining the master node
-  command: "{{ hostvars[groups['ec2_master'][0]]['token']['stdout'] }}"
+- name: Join workers to cluster
+  shell: "{{ hostvars['kube_master']['worker_join'] }}"
+  register: result_of_joining
+
+# - name: Joining the master node
+#   command: "{{ hostvars[groups['role_master'][0]]['token']['stdout'] }}"
 
 - name: Cleaning Caches on RAM
   shell: echo 3 > /proc/sys/vm/drop_caches

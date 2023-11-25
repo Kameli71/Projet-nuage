@@ -188,14 +188,16 @@
     EOF
 
 - name: Set dynamic inventory
-  shell: |
-    PATH="$PATH:/usr/local/bin
-    export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
-    ANS_KEYPAIR="karim-new-key.pem"
-    export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
-    export ANSIBLE_HOST_KEY_CHECKING=False
-    sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
-    ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+  command:
+    cmd: |
+      export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
+      ANS_KEYPAIR="karim-new-key.pem"
+      export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
+      export ANSIBLE_HOST_KEY_CHECKING=False
+      sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
+      ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+
+# ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
 # - name: Add 1st instance to host group nfs_node
 #   ansible.builtin.add_host:
 #     hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"

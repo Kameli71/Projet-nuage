@@ -69,6 +69,9 @@
     sudo systemctl restart docker
     sudo systemctl restart kubelet
 
+# - name: change hostnames
+#   shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_ip_address'] }}"
+
 - name: Initializing k8s cluster
   command: kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem
   register: kubeadm_output
@@ -92,7 +95,6 @@
 - name: Deploying Flannel on Master Node
   command:
     cmd: |
-      sysctl --system
       kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 
 # - name: Generating token for Slave
@@ -101,7 +103,14 @@
 
 - name: Creating token for Slave
   command: kubeadm token create --print-join-command --v=5
-  register: token
+  register: join_command_for_workers
+
+- debug: msg='{{ join_command_for_workers.stdout.strip() }}'
+
+- name: register join command for workers
+  add_host:
+    name: "kube_master"
+    worker_join: "{{ join_command_for_workers.stdout.strip() }}"
 
 - name: Cleaning Caches on RAM
   shell: echo 3 > /proc/sys/vm/drop_caches
