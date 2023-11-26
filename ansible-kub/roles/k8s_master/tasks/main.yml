@@ -1,146 +1,209 @@
 ---
-- name: Add kubeadm repositories on Master Node
-  yum_repository:
-    name: kube
-    description: Kubernetes repo
-    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-    enabled: 1
-    gpgcheck: 1
-    gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+- hosts: all
+  become: true
+  tasks:
 
-- name: Installing Docker & kubeadm on Master Node
-  package:
-    name:
-      - docker
-      - kubeadm
-      - iproute-tc
-    state: present
+  - name: change hostnames
+    shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
 
-# - name : ufw enabled
-#   community.general.ufw:
-#     state: "enabled"
-#     policy: "deny"
-#     logging: "on"
+  - name: swap off
+    shell: |
+      free -m
+      swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
 
-# - name: add port
-#   community.general.ufw:
-#     rule: "allow"
-#     port: "{{ item }}"
-#     proto: "tcp"
-#   with_items:
-#     - 6443
-#     - 2379-2380
-#     - 10250
-#     - 10252
-#     - 10255
-#     - 10251
+  - name: Enable the nodes to see bridged traffic
+    shell: |
+      cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      EOF
+      sysctl --system
 
-- name: Staring & enabling Docker & kubelet on Master Node
-  service:
-    name: "{{ item }}"
-    state: started
-    enabled: yes
-  loop: "{{ service_names }}"
+  - name: update apt-get
+    shell: apt-get update
 
-- name: Add ec2-user to docker group
-  user:
-    name: ec2-user
-    group: docker
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - apt-transport-https  
+      - curl
+      - ca-certificates
 
-- name: Pulling the images of k8s master
-  command: sudo kubeadm config images pull
+  - name: update apt-get and install kube packages
+    shell: |
+      curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
+      echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+      apt-get update -q && \
+      apt-get install -qy kubelet=1.23.5-00 kubectl=1.23.5-00 kubeadm=1.23.5-00 docker.io
 
-# - name: Updating Docker cgroup on Master Node
-#   copy:
-#     dest: /etc/docker/daemon.json
-#     content: |
-#       {
-#       "exec-opts": ["native.cgroupdriver=systemd"]
-#       }
+  - name: Add ubuntu to docker group
+    user:
+      name: ubuntu
+      group: docker
 
-# - name: Restart docker on Master Node
-#   service:
-#     name: docker
-#     state: restarted
-- name: change the Docker cgroup
-  shell: |
-    echo '{"exec-opts": ["native.cgroupdriver=systemd"]}' | sudo tee /etc/docker/daemon.json
-    sudo systemctl daemon-reload
-    sudo systemctl restart docker
-    sudo systemctl restart kubelet
+  - name: Restart docker and enable
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
 
-# - name: change hostnames
-#   shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_ip_address'] }}"
+  # change the Docker cgroup driver by creating a configuration file `/etc/docker/daemon.json` 
+  # and adding the following line then restart deamon, docker and kubelet
 
-- name: Initializing k8s cluster
-  command: kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem
-  register: kubeadm_output
+  - name: change the Docker cgroup
+    shell: |
+      echo '{"exec-opts": ["native.cgroupdriver=systemd"]}' | sudo tee /etc/docker/daemon.json
+      sudo systemctl daemon-reload
+      sudo systemctl restart docker
+      sudo systemctl restart kubelet
 
-- name: Set up kubectl for the current user
-  command: "{{ item }}"
-  with_items:
-    - "mkdir /home/ec2-user/.kube"
-    - "cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config"
-    - "chown ec2-user:ec2-user /home/ec2-user/.kube/config"
 
-# - name: Install Calico network plugin
-#   command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-# - name: Setting up kubectl on Master Node
-#   shell: 
-#     cmd: |
-#       mkdir /home/ec2-user/.kube
-#       sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
-#       sudo chown ec2-user:ec2-user /home/ec2-user/.kube/configchown ec2-user:ec2-user /home/ec2-user/.kube/config
+- hosts: role_master
+  tasks:
+      
+  - name: pull kubernetes images before installation
+    become: yes
+    shell: kubeadm config images pull
 
-- name: Deploying Flannel on Master Node
-  command:
-    cmd: |
-      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  - name: copy the configuration
+    become: yes
+    copy: 
+      src: /home/ec2-user/ansible/playbooks/clusterconfig-base.yml
+      dest: /home/ubuntu/
+  
+  - name: get gettext-base
+    become: true
+    apt:
+      package: gettext-base
+      state: present
 
-# - name: Generating token for Slave
-#   command: kubeadm token generate
-#   register: generate
+  - name: change controlplane_endpoint and produce the clusterconfig.yml file
+    shell: |
+      export CONTROLPLANE_ENDPOINT={{ hostvars[inventory_hostname]['private_ip_address'] }}
+      envsubst < /home/ubuntu/clusterconfig-base.yml > /home/ubuntu/clusterconfig.yml
 
-- name: Creating token for Slave
-  command: kubeadm token create --print-join-command --v=5
-  register: join_command_for_workers
+  - name: initialize the Kubernetes cluster using kubeadm
+    become: true
+    shell: |
+      kubeadm init --config /home/ubuntu/clusterconfig.yml
+    
+  - name: Setup kubeconfig for ubuntu user
+    become: true
+    command: "{{ item }}"
+    with_items:
+     - mkdir -p /home/ubuntu/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+     - chown ubuntu:ubuntu /home/ubuntu/.kube/config
 
-- debug: msg='{{ join_command_for_workers.stdout.strip() }}'
+  - name: Install flannel pod network
+    shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
 
-- name: register join command for workers
-  add_host:
-    name: "kube_master"
-    worker_join: "{{ join_command_for_workers.stdout.strip() }}"
+  - name: Generate join command
+    become: true
+    command: kubeadm token create --print-join-command
+    register: join_command_for_workers
 
-- name: Cleaning Caches on RAM
-  shell: echo 3 > /proc/sys/vm/drop_caches
+  - debug: msg='{{ join_command_for_workers.stdout.strip() }}'
 
-  # - name: Install Docker
-  #   snap:
-  #     name: docker.io
+  - name: register join command for workers
+    add_host:
+      name: "kube_master"
+      worker_join: "{{ join_command_for_workers.stdout.strip() }}"
+
+- hosts: role_worker
+  become: true
+  tasks:
+
+  - name: Join workers to cluster
+    shell: "{{ hostvars['kube_master']['worker_join'] }}"
+    register: result_of_joining
+
+- hosts: role_master
+  become: false
+  tasks:
+
+  - name: Patch the instances
+    become: false
+    shell: |
+      cd /home/ubuntu
+      kubectl patch node {{ hostvars[groups['role_master'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_master'][0]]['instance_id'] }}" }}'
+      kubectl patch node {{ hostvars[groups['role_worker'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][0]]['instance_id'] }}" }}'
+      kubectl patch node {{ hostvars[groups['role_worker'][1]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][1]]['instance_id'] }}" }}'
+
+  - name: Deploy the required cloud-controller-manager 
+    shell: |
+      cd /home/ubuntu
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      chmod 777 get_helm.sh
+      ./get_helm.sh
+      helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
+      helm repo update
+      helm upgrade --install aws-cloud-controller-manager aws-cloud-controller-manager/aws-cloud-controller-manager --set image.tag=v1.20.0-alpha.0
+      
+  - name: Deploy Nginx Ingress 
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
+
+  - name: Deploy AWS CSI Driver
+    become: false
+    shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
+
+  # - name: copy the storage.yml file
+  #   become: yes
+  #   copy: 
+  #     src: ./storage.yml
+  #     dest: /home/ubuntu/
+
+  # - name: create StorageClass object
+  #   become: false
+  #   shell: kubectl apply -f storage.yml
+# tasks file for nfs-server
+- hosts: role_master
+  become: false
+  tasks:
+
+  - name: Creating mountable shared folders
+    file: 
+      path: "{{ item }}"
+      state: directory
+    loop: "{{ shared_dir }}"
+
+  # - name: Install nfs utils
+  #   package:
+  #     name: nfs-utils
   #     state: present
 
-  # - name: Install kubeadm, kubelet, and kubectl
-  #   snap:
-  #     name: "{{ item }}"
-  #     state: present
-  #   loop:
-  #     - kubeadm
-  #     - kubelet
-  #     - kubectl
+  - name: install nfs server
+    action: apt pkg=nfs-kernel-server state=present update_cache=yes
+    tags:
+      -nfs
 
-  # - name: Initialize Kubernetes master
-  #   command: kubeadm init --pod-network-cidr=10.244.0.0/16
-  #   register: kubeadm_output
-  #   ignore_errors: yes
+  - name: install nfs client
+    action: apt pkg=nfs-common state=present
+    # when: is_debian_or_ubuntu
+    tags:
+      -nfs
 
-  # - name: Set up kubectl for the current user
-  #   command: "{{ item }}"
-  #   with_items:
-  #     - "mkdir -p $HOME/.kube"
-  #     - "cp /etc/kubernetes/admin.conf $HOME/.kube/config"
-  #     - "chown $(id -u):$(id -g) $HOME/.kube/config"
+  - name: Configure nfs server
+    copy:
+      dest: /etc/exports
+      content: |
+        {{ shared_dir[0] }} *(rw,no_root_squash)
+        {{ shared_dir[1] }} *(rw,no_root_squash)
 
-  # - name: Install Calico network plugin
-  #   command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-  #   when: "'calico' in kubeadm_output.stdout"
+  # - name: Starting nfs server
+  #   service:
+  #     name: nfs-server 
+  #     state: started
+  #     enabled: yes
+
+  - name: ensure nfs service is running (Ubuntu)
+    action: service name={{item}} state=started
+    when: is_debian_or_ubuntu
+    tags:
+      - nfs
+    with_items:
+      - nfs-kernel-server

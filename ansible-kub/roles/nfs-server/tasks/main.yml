@@ -6,10 +6,21 @@
     state: directory
   loop: "{{ shared_dir }}"
 
-- name: Install nfs utils
-  package:
-    name: nfs-utils
-    state: present
+# - name: Install nfs utils
+#   package:
+#     name: nfs-utils
+#     state: present
+
+- name: install nfs server
+  action: apt pkg=nfs-kernel-server state=present update_cache=yes
+  tags:
+    -nfs
+
+- name: install nfs client
+  action: apt pkg=nfs-common state=present
+  # when: is_debian_or_ubuntu
+  tags:
+    -nfs
 
 - name: Configure nfs server
   copy:
@@ -17,8 +28,17 @@
     content: |
       {{ shared_dir[0] }} *(rw,no_root_squash)
       {{ shared_dir[1] }} *(rw,no_root_squash)
-- name: Starting nfs server
-  service:
-    name: nfs-server 
-    state: started
-    enabled: yes
+
+# - name: Starting nfs server
+#   service:
+#     name: nfs-server 
+#     state: started
+#     enabled: yes
+
+- name: ensure nfs service is running (Ubuntu)
+  action: service name={{item}} state=started
+  when: is_debian_or_ubuntu
+  tags:
+    - nfs
+  with_items:
+    - nfs-kernel-server

@@ -3,49 +3,29 @@
   # gather_facts: no
   gather_facts: no
   become: true
-  tasks:
-    - name: change hostnames
-      shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
 
-    - name: swap off
-      shell: |
-        free -m
-        swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+# - hosts: role_worker_nfs
+#   become: true
+#   tasks:
+#     - name: Running NFS Server Role
+#       include_role:
+#         name: nfs-server
 
-    - name: Enable the nodes to see bridged traffic
-      shell: |
-        cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
-        net.bridge.bridge-nf-call-ip6tables = 1
-        net.bridge.bridge-nf-call-iptables = 1
-        EOF
-        sysctl --system
+# - hosts: role_master
+#   become: true
+#   gather_facts: no
+#   tasks:
+#     - name: Running K8s Master Role
+#       include_role:
+#         name: k8s_master
 
-    - name: yum update 
-      shell: sudo yum update -y
-
-
-- hosts: role_worker_nfs
-  become: true
-  tasks:
-    - name: Running NFS Server Role
-      include_role:
-        name: nfs-server
-
-- hosts: role_master
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Running K8s Master Role
-      include_role:
-        name: k8s_master
-
-- hosts: role_worker
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Running K8s Slave Role
-      include_role:
-        name: k8s_slave
+# - hosts: role_worker
+#   become: true
+#   gather_facts: no
+#   tasks:
+#     - name: Running K8s Slave Role
+#       include_role:
+#         name: k8s_slave
 
 - hosts: role_master
   become: true

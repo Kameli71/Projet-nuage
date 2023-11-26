@@ -15,8 +15,8 @@ sg_name : Karim-Cluster-worker
 sg_id: sg-01f700cf07cd0d65b
 region_name: us-east-1
 subnet_id: subnet-0a51081c527f1fb77
-ami_id: ami-0230bd60aa48260c6
+ami_id: ami-013f17f36f8b1fefb
 keypair: karim-new-key
-instance_flavour: t3.micro
+instance_flavour: t3.small
 vpc_id: "vpc-07a737571d3a10d7d" 
 

@@ -3,3 +3,7 @@
 service_names:
   - "docker"
   - "kubelet"
+
+shared_dir:
+  - /mysql
+  - /wp
