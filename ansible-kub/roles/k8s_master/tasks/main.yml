@@ -151,59 +151,53 @@
     become: false
     shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
 
-  # - name: copy the storage.yml file
-  #   become: yes
-  #   copy: 
-  #     src: ./storage.yml
-  #     dest: /home/ubuntu/
-
-  # - name: create StorageClass object
-  #   become: false
-  #   shell: kubectl apply -f storage.yml
 # tasks file for nfs-server
-- hosts: role_master
-  become: false
-  tasks:
+# - hosts: role_master
+#   become: true
+#   tasks:
 
-  - name: Creating mountable shared folders
-    file: 
-      path: "{{ item }}"
-      state: directory
-    loop: "{{ shared_dir }}"
+#   - name: Creating mountable shared folders
+#     file: 
+#       path: "/mysql"
+#       state: directory
+#     # loop: "{{ shared_dir }}
 
-  # - name: Install nfs utils
-  #   package:
-  #     name: nfs-utils
-  #     state: present
+#   - name: Creating mountable shared folders
+#     file: 
+#       path: "/wp"
+#       state: directory
+#   # - name: Install nfs utils
+#   #   package:
+#   #     name: nfs-utils
+#   #     state: present
 
-  - name: install nfs server
-    action: apt pkg=nfs-kernel-server state=present update_cache=yes
-    tags:
-      -nfs
+#   - name: install nfs server
+#     action: apt pkg=nfs-kernel-server state=present update_cache=yes
+#     tags:
+#       -nfs
 
-  - name: install nfs client
-    action: apt pkg=nfs-common state=present
-    # when: is_debian_or_ubuntu
-    tags:
-      -nfs
+#   - name: install nfs client
+#     action: apt pkg=nfs-common state=present
+#     # when: is_debian_or_ubuntu
+#     tags:
+#       -nfs
 
-  - name: Configure nfs server
-    copy:
-      dest: /etc/exports
-      content: |
-        {{ shared_dir[0] }} *(rw,no_root_squash)
-        {{ shared_dir[1] }} *(rw,no_root_squash)
+#   - name: Configure nfs server
+#     copy:
+#       dest: /etc/exports
+#       content: |
+#         /mysql *(rw,no_root_squash)
+#         /dev *(rw,no_root_squash)
 
-  # - name: Starting nfs server
-  #   service:
-  #     name: nfs-server 
-  #     state: started
-  #     enabled: yes
+#   # - name: Starting nfs server
+#   #   service:
+#   #     name: nfs-server 
+#   #     state: started
+#   #     enabled: yes
 
-  - name: ensure nfs service is running (Ubuntu)
-    action: service name={{item}} state=started
-    when: is_debian_or_ubuntu
-    tags:
-      - nfs
-    with_items:
-      - nfs-kernel-server
+#   - name: ensure nfs service is running (Ubuntu)
+#     action: service name={{item}} state=started
+#     tags:
+#       - nfs
+#     with_items:
+#       - nfs-kernel-server

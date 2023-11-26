@@ -109,28 +109,28 @@
       cidr_ip: 0.0.0.0/0
   register: sgmaster
 
-- name: Create EC2 Instance Master
-  amazon.aws.ec2_instance:
-    name: "Karim-Cluster-master"
-    instance_type: "{{ instance_flavour }}"
-    image_id: "{{ ami_id }}"
-    wait: true
-    aws_region: "{{ region_name }}"
-    security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
-    key_name: "{{ keypair }}"
-    count: 1
-    vpc_subnet_id: "{{ subnet_id }}"
-    state: present
-    network:
-      assign_public_ip: true
-    tags:
-      Role: master
-      environment: dev
-      Project: Karim-kube
-      entity: numfactory
-      ephemere: oui
-      owner: kkameli@thenuumfactory.fr
-  register: ec2
+# - name: Create EC2 Instance Master
+#   amazon.aws.ec2_instance:
+#     name: "Karim-Cluster-master"
+#     instance_type: "{{ instance_flavour }}"
+#     image_id: "{{ ami_id }}"
+#     wait: true
+#     aws_region: "{{ region_name }}"
+#     security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
+#     key_name: "{{ keypair }}"
+#     count: 1
+#     vpc_subnet_id: "{{ subnet_id }}"
+#     state: present
+#     network:
+#       assign_public_ip: true
+#     tags:
+#       Role: master
+#       environment: dev
+#       Project: Karim-kube
+#       entity: numfactory
+#       ephemere: oui
+#       owner: kkameli@thenuumfactory.fr
+#   register: ec2
   # loop: "{{ instance_tag }}"
 # - name: Create EC2 Instance Worker-nfs
 #   amazon.aws.ec2_instance:
@@ -155,28 +155,113 @@
 #       owner: kkameli@thenuumfactory.fr
 #   register: ec22
 
-- name: Create EC2 Instances Worker
-  amazon.aws.ec2_instance:
-    name: "Karim-Cluster-worker"
-    instance_type: "{{ instance_flavour }}"
-    image_id: "{{ ami_id }}"
-    wait: true
-    aws_region: "{{ region_name }}"
-    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
-    key_name: "{{ keypair }}"
-    count: 2
-    vpc_subnet_id: "{{ subnet_id }}"
+# - name: Create EC2 Instances Worker
+#   amazon.aws.ec2_instance:
+#     name: "Karim-Cluster-worker"
+#     instance_type: "{{ instance_flavour }}"
+#     image_id: "{{ ami_id }}"
+#     wait: true
+#     aws_region: "{{ region_name }}"
+#     security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+#     key_name: "{{ keypair }}"
+#     count: 2
+#     state: present
+#     network:
+#       assign_public_ip: true
+#     tags:
+#       Role: worker
+#       environment: dev
+#       Project: Karim-kube
+#       entity: numfactory
+#       ephemere: oui
+#       owner: kkameli@thenuumfactory.fr
+#   register: ec22
+
+- name: Create the ELB 
+  amazon.aws.ec2_elb_lb:
+    name: "Karim-elb"
     state: present
-    network:
-      assign_public_ip: true
+    region: "{{ region_name }}"
+    subnets: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
+    security_group_ids : ["{{ sg.group_id }}", "{{ sgmaster.group_id }}", "{{ sgworker.group_id }}"]
+    listeners:
+      - protocol: http # options are http, https, ssl, tcp
+        load_balancer_port: 80
+        instance_port: 80
+        ssl_certificate_id: arn:aws:acm:us-east-1:019050461780:certificate/34e41708-59b0-4f20-b535-66cddbfd69d9
+      - protocol: https
+        load_balancer_port: 443
+        instance_protocol: http # optional, defaults to value of protocol setting
+        instance_port: 80
+        ssl_certificate_id: arn:aws:acm:us-east-1:019050461780:certificate/34e41708-59b0-4f20-b535-66cddbfd69d9
+  register: elb
+
+
+- name: create launch config master
+  community.aws.autoscaling_launch_config:
+    name: karim-master
+    image_id: "{{ ami_id }}"
+    key_name: "{{ keypair }}"
+    region: us-east-1
+    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+    instance_type: t3.small
+    assign_public_ip: true
+  register: lc
+
+- name: Create a autoscaling group worker
+  amazon.aws.autoscaling_group:
+    name: Karim-ascg-master
+    region: "{{ region_name }}"
+    load_balancers: ["Karim-elb"]
+    launch_config_name: 'karim-master'
+    availability_zones: [ 'us-east-1a', 'us-east-1b' ]
+    min_size: 1
+    max_size: 10
+    desired_capacity: 2
+    vpc_zone_identifier: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
     tags:
-      Role: worker
-      environment: dev
-      Project: Karim-kube
-      entity: numfactory
-      ephemere: oui
-      owner: kkameli@thenuumfactory.fr
-  register: ec22
+      - Name: Karim-master
+      - Role: master
+      - environment: dev
+      - Project: Karim-kube
+      - entity: numfactory
+      - ephemere: non
+      - owner: kkameli@thenuumfactory.fr
+      - environment: dev
+        propagate_at_launch: false
+
+- name: create launch config worker
+  community.aws.autoscaling_launch_config:
+    name: karim-worker
+    image_id: "{{ ami_id }}"
+    key_name: "{{ keypair }}"
+    region: us-east-1
+    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+    instance_type: t3.small
+    assign_public_ip: true
+  register: lc
+
+- name: Create a autoscaling group worker
+  amazon.aws.autoscaling_group:
+    name: Karim-ascg
+    region: "{{ region_name }}"
+    load_balancers: ["Karim-elb"]
+    launch_config_name: 'karim-worker'
+    availability_zones: [ 'us-east-1a', 'us-east-1b' ]
+    min_size: 1
+    max_size: 10
+    desired_capacity: 4
+    vpc_zone_identifier: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
+    tags:
+      - Name: Karim-worker
+      - Role: worker
+      - environment: dev
+      - Project: Karim-kube
+      - entity: numfactory
+      - ephemere: non
+      - owner: kkameli@thenuumfactory.fr
+      - environment: dev
+        propagate_at_launch: false
 
 - name: Set static inventory inventory
   shell: |

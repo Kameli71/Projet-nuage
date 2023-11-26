@@ -14,10 +14,10 @@
 # - hosts: role_master
 #   become: true
 #   gather_facts: no
-#   tasks:
-#     - name: Running K8s Master Role
-#       include_role:
-#         name: k8s_master
+  tasks:
+    - name: Running K8s Master Role
+      include_role:
+        name: k8s_master
 
 # - hosts: role_worker
 #   become: true
@@ -26,11 +26,3 @@
 #     - name: Running K8s Slave Role
 #       include_role:
 #         name: k8s_slave
-
-- hosts: role_master
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Running Kube WordPress Role
-      include_role:
-        name: kube-wordpress

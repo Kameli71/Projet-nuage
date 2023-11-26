@@ -1,5 +1,5 @@
 ---
-# tasks file for kube-wordpress
+# tasks file for kube-wordpress   
 
 - name: Copying Kube Wordpress files 
   copy: 
@@ -10,10 +10,15 @@
   template:
     src: "storage.yml.j2"
     dest: "/root/K8s-WordPress/storage.yml"
-    
-- name: Deploying Wordpress on Kubernetes
-  command: kubectl create -k /root/K8s-WordPress/
 
-- name: Go to this below URL to access WordPress after few seconds
-  debug:
-    msg: http://{{ groups['ec2_master'][0] }}:31000
+- name: Apply PersistentVolume
+  k8s:
+    state: present
+    definition: "/root/K8s-WordPress/storage.yml"
+    
+# - name: Deploying Wordpress on Kubernetes
+#   command: sudo kubectl create -k /root/K8s-WordPress/
+
+# - name: Go to this below URL to access WordPress after few seconds
+#   debug:
+#     msg: http://{{ groups['ec2_master'][0] }}:31000
