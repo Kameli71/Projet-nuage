@@ -9,19 +9,22 @@
 #     - name: Running NFS Server Role
 #       include_role:
 #         name: nfs-server
-
+  # tasks:
+  #   - name: Deployement micro cart
+  #     include_role:
+  #       name: cart
 # - hosts: role_master
 #   become: true
 #   gather_facts: no
-  tasks:
-    - name: Running K8s Master Role
-      include_role:
-        name: k8s_master
-
-# - hosts: role_worker
-#   become: true
-#   gather_facts: no
 #   tasks:
-#     - name: Running K8s Slave Role
+#     - name: Running K8s Master Role
 #       include_role:
-#         name: k8s_slave
+#         name: k8s_master
+
+- hosts: role_master
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Running K8s Slave Role
+      include_role:
+        name: node

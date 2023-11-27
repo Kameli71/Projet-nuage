@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Pod
+metadata:
+  name: myapp
+  namespace: my-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: my-pv
+          mountPath: /data/test
+      volumes:
+        - name: my-pv
+          hostPath:
+            path: /data/test

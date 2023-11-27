@@ -132,28 +132,28 @@
       owner: kkameli@thenuumfactory.fr
   register: ec2
   # loop: "{{ instance_tag }}"
-# - name: Create EC2 Instance Worker-nfs
-#   amazon.aws.ec2_instance:
-#     name: "Karim-Cluster-worker-nfs"
-#     instance_type: "{{ instance_flavour }}"
-#     image_id: "{{ ami_id }}"
-#     wait: true
-#     aws_region: "{{ region_name }}"
-#     security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
-#     key_name: "{{ keypair }}"
-#     count: 1
-#     vpc_subnet_id: "{{ subnet_id }}"
-#     state: present
-#     network:
-#       assign_public_ip: true
-#     tags:
-#       Role: worker-nfs
-#       environment: dev
-#       Project: Karim-kube
-#       entity: numfactory
-#       ephemere: oui
-#       owner: kkameli@thenuumfactory.fr
-#   register: ec22
+- name: Create EC2 Instance Worker-nfs
+  amazon.aws.ec2_instance:
+    name: "Karim-Cluster-worker-nfs"
+    instance_type: "{{ instance_flavour }}"
+    image_id: "{{ ami_id }}"
+    wait: true
+    aws_region: "{{ region_name }}"
+    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+    key_name: "{{ keypair }}"
+    count: 1
+    vpc_subnet_id: "{{ subnet_id }}"
+    state: present
+    network:
+      assign_public_ip: true
+    tags:
+      Role: worker-nfs
+      environment: dev
+      Project: Karim-kube
+      entity: numfactory
+      ephemere: oui
+      owner: kkameli@thenuumfactory.fr
+  register: ec22
 
 # - name: Create EC2 Instances Worker
 #   amazon.aws.ec2_instance:

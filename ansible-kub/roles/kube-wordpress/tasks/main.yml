@@ -4,20 +4,24 @@
 - name: Copying Kube Wordpress files 
   copy: 
    src: "K8s-WordPress"
-   dest: "/root" 
+   dest: "/home/ubuntu" 
 
 - name: Copying Kube Storage Class file
   template:
     src: "storage.yml.j2"
-    dest: "/root/K8s-WordPress/storage.yml"
+    dest: "/home/ubuntu/K8s-WordPress/storage.yml"
 
-- name: Apply PersistentVolume
-  k8s:
-    state: present
-    definition: "/root/K8s-WordPress/storage.yml"
+# - name: Apply PersistentVolume
+#   k8s:
+#     state: present
+#     definition: "/home/ubuntu/K8s-WordPress/storage.yml"
+
+# - name: Deploy Nginx Ingress 
+#   shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
+
     
 # - name: Deploying Wordpress on Kubernetes
-#   command: sudo kubectl create -k /root/K8s-WordPress/
+#   command: sudo kubectl create -k /home/ubuntu//K8s-WordPress/
 
 # - name: Go to this below URL to access WordPress after few seconds
 #   debug:
