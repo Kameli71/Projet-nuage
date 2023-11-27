@@ -109,28 +109,28 @@
       cidr_ip: 0.0.0.0/0
   register: sgmaster
 
-# - name: Create EC2 Instance Master
-#   amazon.aws.ec2_instance:
-#     name: "Karim-Cluster-master"
-#     instance_type: "{{ instance_flavour }}"
-#     image_id: "{{ ami_id }}"
-#     wait: true
-#     aws_region: "{{ region_name }}"
-#     security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
-#     key_name: "{{ keypair }}"
-#     count: 1
-#     vpc_subnet_id: "{{ subnet_id }}"
-#     state: present
-#     network:
-#       assign_public_ip: true
-#     tags:
-#       Role: master
-#       environment: dev
-#       Project: Karim-kube
-#       entity: numfactory
-#       ephemere: oui
-#       owner: kkameli@thenuumfactory.fr
-#   register: ec2
+- name: Create EC2 Instance Master
+  amazon.aws.ec2_instance:
+    name: "Karim-Cluster-master"
+    instance_type: "{{ instance_flavour }}"
+    image_id: "{{ ami_id }}"
+    wait: true
+    aws_region: "{{ region_name }}"
+    security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
+    key_name: "{{ keypair }}"
+    count: 1
+    vpc_subnet_id: "{{ subnet_id }}"
+    state: present
+    network:
+      assign_public_ip: true
+    tags:
+      Role: master
+      environment: dev
+      Project: Karim-kube
+      entity: numfactory
+      ephemere: oui
+      owner: kkameli@thenuumfactory.fr
+  register: ec2
   # loop: "{{ instance_tag }}"
 # - name: Create EC2 Instance Worker-nfs
 #   amazon.aws.ec2_instance:
@@ -206,38 +206,38 @@
     vpc_id: "{{ vpc_id }}"
     state: present
 
-- name: create launch config master
-  community.aws.autoscaling_launch_config:
-    name: karim-master1
-    image_id: "{{ ami_id }}"
-    key_name: "{{ keypair }}"
-    region: us-east-1
-    security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
-    instance_type: t3.small
-    assign_public_ip: true
-  register: lc
-# [ 'subnet-078bfefa3eea73d8f', 'subnet-01b4922cc9934dadf' ]
-- name: Create a autoscaling group master
-  amazon.aws.autoscaling_group:
-    name: Karim-ascg-master
-    region: "{{ region_name }}"
-    load_balancers: ["Karim-elb"]
-    launch_config_name: 'karim-master1'
-    availability_zones: [ 'us-east-1a', 'us-east-1b' ]
-    min_size: 1
-    max_size: 10
-    desired_capacity: 2
-    vpc_zone_identifier: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
-    tags:
-      - Name: Karim-master
-      - Role: master
-      - environment: dev
-      - Project: Karim-kube
-      - entity: numfactory
-      - ephemere: non
-      - owner: kkameli@thenuumfactory.fr
-      - environment: dev
-        propagate_at_launch: false
+# - name: create launch config master
+#   community.aws.autoscaling_launch_config:
+#     name: karim-master1
+#     image_id: "{{ ami_id }}"
+#     key_name: "{{ keypair }}"
+#     region: us-east-1
+#     security_groups: ["{{ sg.group_id }}", "{{ sgworker.group_id }}"]
+#     instance_type: t3.small
+#     assign_public_ip: true
+#   register: lc
+# # [ 'subnet-078bfefa3eea73d8f', 'subnet-01b4922cc9934dadf' ]
+# - name: Create a autoscaling group master
+#   amazon.aws.autoscaling_group:
+#     name: Karim-ascg-master
+#     region: "{{ region_name }}"
+#     load_balancers: ["Karim-elb"]
+#     launch_config_name: 'karim-master1'
+#     availability_zones: [ 'us-east-1a', 'us-east-1b' ]
+#     min_size: 1
+#     max_size: 3
+#     desired_capacity: 1
+#     vpc_zone_identifier: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
+#     tags:
+#       - Name: Karim-master
+#       - Role: master
+#       - environment: dev
+#       - Project: Karim-kube
+#       - entity: numfactory
+#       - ephemere: non
+#       - owner: kkameli@thenuumfactory.fr
+#       - environment: dev
+#         propagate_at_launch: false
 
 - name: create launch config worker
   community.aws.autoscaling_launch_config:
@@ -257,8 +257,8 @@
     load_balancers: ["Karim-elb"]
     launch_config_name: 'karim-worker1'
     availability_zones: [ 'us-east-1a', 'us-east-1b' ]
-    min_size: 1
-    max_size: 10
+    min_size: 2
+    max_size: 8
     desired_capacity: 4
     vpc_zone_identifier: [ 'subnet-0a51081c527f1fb77', 'subnet-017b94e623c7e8f69' ]
     tags:
@@ -272,22 +272,22 @@
       - environment: dev
         propagate_at_launch: false
 
-- name: Set static inventory inventory
-  shell: |
-    cat << EOF > /home/ec2-user/ansible/inventory/hosts.ini
-    172.31.91.243   ansible_user=ubuntu
-    172.31.87.143   ansible_user=ubuntu
-    172.31.90.30    ansible_user=ubuntu
-    172.31.92.110   ansible_user=ubuntu
-    172.31.90.30    ansible_user=ubuntu
-    172.31.92.110   ansible_user=ubuntu
-    EOF
+# - name: Set static inventory inventory
+#   shell: |
+#     cat << EOF > /home/ec2-user/ansible/inventory/hosts.ini
+#     172.31.91.243   ansible_user=ubuntu
+#     172.31.87.143   ansible_user=ubuntu
+#     172.31.90.30    ansible_user=ubuntu
+#     172.31.92.110   ansible_user=ubuntu
+#     172.31.85.30    ansible_user=ubuntu
+#     172.31.89.110   ansible_user=ubuntu
+#     EOF
 
-- name: Set dynamic inventory
-  command:
-    cmd: |
-      sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
-      ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+# - name: Set dynamic inventory
+#   command:
+#     cmd: |
+#       sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
+#       ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
 
 # ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
       # export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini

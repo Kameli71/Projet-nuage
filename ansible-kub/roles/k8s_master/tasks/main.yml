@@ -1,17 +1,10 @@
 ---
-- hosts: localhost
-  become: true
-  tasks:
-
 - hosts: all
   become: true
-  vars:
-    region: "us-east-1"
-    asg_name: "Karim-ascg-master"
   tasks:
 
   - name: change hostnames
-    shell: "hostnamectl set-hostname {{ 'private_dns_name' }}"
+    shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
 
   - name: swap off
     shell: |
@@ -69,7 +62,7 @@
       sudo systemctl restart kubelet
 
 
-- hosts: master
+- hosts: role_master
   tasks:
       
   - name: pull kubernetes images before installation
@@ -90,7 +83,7 @@
 
   - name: change controlplane_endpoint and produce the clusterconfig.yml file
     shell: |
-      export CONTROLPLANE_ENDPOINT={{ 'private_ip_address' }}
+      export CONTROLPLANE_ENDPOINT={{ hostvars[inventory_hostname]['private_ip_address'] }}
       envsubst < /home/ubuntu/clusterconfig-base.yml > /home/ubuntu/clusterconfig.yml
 
   - name: initialize the Kubernetes cluster using kubeadm
@@ -121,7 +114,7 @@
       name: "kube_master"
       worker_join: "{{ join_command_for_workers.stdout.strip() }}"
 
-- hosts: worker
+- hosts: role_worker
   become: true
   tasks:
 
