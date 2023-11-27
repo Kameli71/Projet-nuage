@@ -1,0 +1,144 @@
+---
+- name: "fetching instance details"
+  become: false
+  hosts: localhost
+  vars:
+    region: "us-east-1"
+    asg_name: "Karim-ascg-master"          #name of autoscaling group
+  tasks:
+
+# - name: Installing boto & boto3 on local system
+#   service:
+#     name: boto
+#     state: present
+
+# - name: Installing boto & boto3 on local system
+#   service:
+#     name: boto3
+#     state: present
+
+ 
+    - name: "gathering instance details"
+      amazon.aws.ec2_instance_info:
+        region: "{{ region }}"
+        filters:
+          "tag:aws:autoscaling:groupName": "{{ asg_name }}"
+          "tag:Project": "Karim-kube"
+          instance-state-name: [ "running" ]
+      register: instance_details
+
+    - name: "creating dynamic inventory"
+      add_host:
+        groups: "asg_instances"
+        hostname: "{{ item.private_ip_address }}"
+        ansible_ssh_user: "ubuntu"
+        ansible_ssh_host: '{{ item.private_ip_address }}'
+        ansible_ssh_port: "22"
+        ansible_ssh_private_key_file: "/home/ec2-user/Projet-nuage/karim-new-key.pem"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+      loop: "{{ instance_details.instances }}"
+ 
+- name: "Deploying a site from github repo"
+  hosts: all
+  become: true
+  serial: 1
+  vars:
+    repo_url: https://github.com/sreehariskumar/aws-elb-site.git
+    httpd_owner: "apache"
+    httpd_group: "apache"
+    httpd_port: "80"
+    httpd_domain: "shopping.1by2.online"
+    health_check_delay: 40
+    packages:
+      - httpd
+      - php
+      - git
+    clone_dir: "/var/website/"
+  tasks:
+ 
+    - name: "installing packages"
+      yum: 
+        name: "{{ packages }}"
+        state: present
+ 
+    - name: "creating conf from template"
+      template:
+        src: "./httpd.conf.j2"
+        dest: "/etc/httpd/conf/httpd.conf"
+        owner: "{{ httpd_owner }}"
+        group: "{{ httpd_group }}"
+      notify:
+        - apache-reload
+ 
+    - name: "creating virtualhost from template"
+      template: 
+        src: "./virtualhost.conf.j2"
+        dest: "/etc/httpd/conf.d/{{ httpd_domain }}.conf"
+        owner: "{{ httpd_owner }}"
+        group: "{{ httpd_group }}"
+      notify:
+        - apache-reload
+ 
+    - name: "creating document root"
+      file:
+        path: "/var/www/html/{{ httpd_domain }}"
+        state: directory
+        owner: "{{ httpd_owner }}"
+        group: "{{ httpd_group }}"
+ 
+    - name: "creating cloning directory"
+      file:
+        path: "{{ clone_dir }}"
+        state: directory
+ 
+ 
+    - name: "cloning from repo"
+      git: 
+        repo: "{{ repo_url }}"
+        dest: "{{ clone_dir }}"
+      register: clone_status
+      notify:
+        - apache-restart
+        - up-delay
+ 
+    - name: "stopping instances"
+      when: clone_status.changed
+      service:
+        name: httpd
+        state: stopped
+      notify:
+        - apache-restart
+        - up-delay
+ 
+    - name: "connection drain waiting"
+      when: clone_status.changed
+      wait_for:
+        timeout: "{{ health_check_delay }}"
+ 
+    - name: "copying contents to document root"
+      when: clone_status.changed
+      copy:
+        src: "{{ clone_dir }}"
+        dest: "/var/www/html/{{ httpd_domain }}"
+        remote_src: true
+      notify:
+        - apache-restart
+        - up-delay
+ 
+  handlers:
+ 
+    - name: "apache-restart"
+      service:
+        name: httpd
+        state: restarted
+        enabled: true
+ 
+    - name: "apache-reload"
+      service:
+        name: httpd
+        state: reloaded
+        enabled: true
+ 
+    - name: "up-delay"
+      wait_for:
+        timeout: "40"

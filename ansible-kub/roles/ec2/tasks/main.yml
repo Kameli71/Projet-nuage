@@ -197,9 +197,18 @@
   register: elb
 
 
+- name: Create a target group with a default health check
+  community.aws.elb_target_group:
+    name: Karim-tg
+    region: "{{ region_name }}"
+    protocol: http
+    port: 80
+    vpc_id: "{{ vpc_id }}"
+    state: present
+
 - name: create launch config master
   community.aws.autoscaling_launch_config:
-    name: karim-master
+    name: karim-master1
     image_id: "{{ ami_id }}"
     key_name: "{{ keypair }}"
     region: us-east-1
@@ -207,13 +216,13 @@
     instance_type: t3.small
     assign_public_ip: true
   register: lc
-
-- name: Create a autoscaling group worker
+# [ 'subnet-078bfefa3eea73d8f', 'subnet-01b4922cc9934dadf' ]
+- name: Create a autoscaling group master
   amazon.aws.autoscaling_group:
     name: Karim-ascg-master
     region: "{{ region_name }}"
     load_balancers: ["Karim-elb"]
-    launch_config_name: 'karim-master'
+    launch_config_name: 'karim-master1'
     availability_zones: [ 'us-east-1a', 'us-east-1b' ]
     min_size: 1
     max_size: 10
@@ -232,7 +241,7 @@
 
 - name: create launch config worker
   community.aws.autoscaling_launch_config:
-    name: karim-worker
+    name: karim-worker1
     image_id: "{{ ami_id }}"
     key_name: "{{ keypair }}"
     region: us-east-1
@@ -246,7 +255,7 @@
     name: Karim-ascg
     region: "{{ region_name }}"
     load_balancers: ["Karim-elb"]
-    launch_config_name: 'karim-worker'
+    launch_config_name: 'karim-worker1'
     availability_zones: [ 'us-east-1a', 'us-east-1b' ]
     min_size: 1
     max_size: 10
@@ -270,19 +279,22 @@
     172.31.87.143   ansible_user=ubuntu
     172.31.90.30    ansible_user=ubuntu
     172.31.92.110   ansible_user=ubuntu
+    172.31.90.30    ansible_user=ubuntu
+    172.31.92.110   ansible_user=ubuntu
     EOF
 
 - name: Set dynamic inventory
   command:
     cmd: |
-      export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
-      ANS_KEYPAIR="karim-new-key.pem"
-      export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
-      export ANSIBLE_HOST_KEY_CHECKING=False
       sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
       ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
 
 # ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
+      # export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
+      # ANS_KEYPAIR="karim-new-key.pem"
+      # export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
+      # export ANSIBLE_HOST_KEY_CHECKING=False
+
 # - name: Add 1st instance to host group nfs_node
 #   ansible.builtin.add_host:
 #     hostname: "{{ ec2.results[0].instances[0].public_ip_address }}"cat 

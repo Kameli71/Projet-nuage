@@ -19,4 +19,6 @@ ami_id: ami-013f17f36f8b1fefb
 keypair: karim-new-key
 instance_flavour: t3.small
 vpc_id: "vpc-07a737571d3a10d7d" 
+asg_name: "Karim-ascg-master"
+asg_name2: "Karim-ascg"
 

@@ -1,6 +1,6 @@
 ---
 - hosts: localhost
-  become: false
+  become: true
   vars:
     region: "us-east-1"
     asg_name: "Karim-ascg-master"
@@ -17,16 +17,36 @@
         instance-state-name: [ "running" ]
     register: instance_details
 
+  # - name: Get instance IP addresses.
+  #   debug:
+  #           msg: "{{ item.0 }} | {{ item.1 }} | {{ item.2 }}"
+  #   with_together:
+  #     - "{{ instance_details.instances | map(attribute='tags.aws:autoscaling:groupName') | list }}"
+  #     - "{{ instance_details.instances[0].private_ip_address }}"
+  #     - "{{ instance_details.instances[0].private_dns_name }}"
+
+  # - name: Gather and Save Instance Info
+  #   set_fact:
+  #     Tag_Name: "{{ instance_details.instances | map(attribute='tags.aws:autoscaling:groupName') | list }}"
+  #     Pub_IP: "{{ instance_details.instances[0].private_ip_address }}"
+  #     Pvt_IP: "{{ instance_details.instances[0].private_dns_name }}"
+
+  # - local_action:
+  #       copy content="{{ Tag_Name }} | {{ Pub_IP }} | {{ Pvt_IP }}" dest=ec2iptest.txt
+
   - name: "creating dynamic inventory"
     add_host:
       groups: "master"
-      hostname: "{{ item.private_ip_address }}"
+      hostname: "{{ item.private_ip_address}}"
       ansible_ssh_user: "ubuntu"
       ansible_ssh_host: '{{ item.private_ip_address }}'
       ansible_ssh_port: "22"
       ansible_ssh_private_key_file: "/home/ec2-user/Projet-nuage/karim-new-key.pem"
       ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     loop: "{{ instance_details.instances }}"
+
+  # - local_action:
+  #     copy content="{{ host.hostname[0] }} | {{ host.ansible_ssh_user[0] }}" dest=ec2iptest.txt
 
 
   - name: "gathering instance details"
@@ -38,14 +58,3 @@
         "tag:Project": "Karim-kube"
         instance-state-name: [ "running" ]
     register: instance_details
-
-  - name: "creating dynamic inventory"
-    add_host:
-      groups: "worker"
-      hostname: "{{ item.private_ip_address }}"
-      ansible_ssh_user: "ubuntu"
-      ansible_ssh_host: '{{ item.private_ip_address }}'
-      ansible_ssh_port: "22"
-      ansible_ssh_private_key_file: "/home/ec2-user/Projet-nuage/karim-new-key.pem"
-      ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-    loop: "{{ instance_details.instances }}"

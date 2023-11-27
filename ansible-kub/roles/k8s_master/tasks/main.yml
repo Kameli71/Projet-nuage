@@ -1,10 +1,17 @@
 ---
-- hosts: all
+- hosts: localhost
   become: true
   tasks:
 
+- hosts: all
+  become: true
+  vars:
+    region: "us-east-1"
+    asg_name: "Karim-ascg-master"
+  tasks:
+
   - name: change hostnames
-    shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
+    shell: "hostnamectl set-hostname {{ 'private_dns_name' }}"
 
   - name: swap off
     shell: |
@@ -62,7 +69,7 @@
       sudo systemctl restart kubelet
 
 
-- hosts: role_master
+- hosts: master
   tasks:
       
   - name: pull kubernetes images before installation
@@ -83,7 +90,7 @@
 
   - name: change controlplane_endpoint and produce the clusterconfig.yml file
     shell: |
-      export CONTROLPLANE_ENDPOINT={{ hostvars[inventory_hostname]['private_ip_address'] }}
+      export CONTROLPLANE_ENDPOINT={{ 'private_ip_address' }}
       envsubst < /home/ubuntu/clusterconfig-base.yml > /home/ubuntu/clusterconfig.yml
 
   - name: initialize the Kubernetes cluster using kubeadm
@@ -114,7 +121,7 @@
       name: "kube_master"
       worker_join: "{{ join_command_for_workers.stdout.strip() }}"
 
-- hosts: role_worker
+- hosts: worker
   become: true
   tasks:
 
@@ -122,34 +129,34 @@
     shell: "{{ hostvars['kube_master']['worker_join'] }}"
     register: result_of_joining
 
-- hosts: role_master
-  become: false
-  tasks:
+# - hosts: role_master
+#   become: false
+#   tasks:
 
-  - name: Patch the instances
-    become: false
-    shell: |
-      cd /home/ubuntu
-      kubectl patch node {{ hostvars[groups['role_master'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_master'][0]]['instance_id'] }}" }}'
-      kubectl patch node {{ hostvars[groups['role_worker'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][0]]['instance_id'] }}" }}'
-      kubectl patch node {{ hostvars[groups['role_worker'][1]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][1]]['instance_id'] }}" }}'
+#   - name: Patch the instances
+#     become: false
+#     shell: |
+#       cd /home/ubuntu
+#       kubectl patch node {{ hostvars[groups['role_master'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_master'][0]]['instance_id'] }}" }}'
+#       kubectl patch node {{ hostvars[groups['role_worker'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][0]]['instance_id'] }}" }}'
+#       kubectl patch node {{ hostvars[groups['role_worker'][1]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][1]]['instance_id'] }}" }}'
 
-  - name: Deploy the required cloud-controller-manager 
-    shell: |
-      cd /home/ubuntu
-      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      chmod 777 get_helm.sh
-      ./get_helm.sh
-      helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
-      helm repo update
-      helm upgrade --install aws-cloud-controller-manager aws-cloud-controller-manager/aws-cloud-controller-manager --set image.tag=v1.20.0-alpha.0
+#   - name: Deploy the required cloud-controller-manager 
+#     shell: |
+#       cd /home/ubuntu
+#       curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+#       chmod 777 get_helm.sh
+#       ./get_helm.sh
+#       helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
+#       helm repo update
+#       helm upgrade --install aws-cloud-controller-manager aws-cloud-controller-manager/aws-cloud-controller-manager --set image.tag=v1.20.0-alpha.0
       
-  - name: Deploy Nginx Ingress 
-    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
+#   - name: Deploy Nginx Ingress 
+#     shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
 
-  - name: Deploy AWS CSI Driver
-    become: false
-    shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
+#   - name: Deploy AWS CSI Driver
+#     become: false
+#     shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
 
 # tasks file for nfs-server
 # - hosts: role_master
