@@ -33,6 +33,8 @@ pipeline {
         stage('Build Nfs-server') {
             steps {
                 echo 'Installation du Nfs-server'
+                sh('export ANSIBLE_PRIVATE_KEY_FILE="karim-new-key.pem"')
+                sh('export ANSIBLE_HOST_KEY_CHECKING=False')
                 sh('ansible-playbook -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml ./ansible-kub/nfs-setup.yml')
                 echo 'Installation des Nfs-server terminé !'
             }
@@ -40,6 +42,8 @@ pipeline {
         stage('Build Configuration') {
             steps {
                 echo 'Configuration du cluster'
+                sh('export ANSIBLE_PRIVATE_KEY_FILE="karim-new-key.pem"')
+                sh('export ANSIBLE_HOST_KEY_CHECKING=False')
                 sh("ansible-playbook -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml ./ansible-kub/roles/k8s_master/tasks/main.yml")
                 echo 'Installation des ec2 terminé !'
             }
