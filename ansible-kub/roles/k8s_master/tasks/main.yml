@@ -72,7 +72,7 @@
   - name: copy the configuration
     become: yes
     copy: 
-      src: /home/ec2-user/ansible/playbooks/clusterconfig-base.yml
+      src: /ansible/playbooks/clusterconfig-base.yml
       dest: /home/ubuntu/
   
   - name: get gettext-base
@@ -151,54 +151,3 @@
 #   - name: Deploy AWS CSI Driver
 #     become: false
 #     shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
-
-# tasks file for nfs-server
-# - hosts: role_master
-#   become: true
-#   tasks:
-
-#   - name: Creating mountable shared folders
-#     file: 
-#       path: "/mysql"
-#       state: directory
-#     # loop: "{{ shared_dir }}
-
-#   - name: Creating mountable shared folders
-#     file: 
-#       path: "/wp"
-#       state: directory
-#   # - name: Install nfs utils
-#   #   package:
-#   #     name: nfs-utils
-#   #     state: present
-
-#   - name: install nfs server
-#     action: apt pkg=nfs-kernel-server state=present update_cache=yes
-#     tags:
-#       -nfs
-
-#   - name: install nfs client
-#     action: apt pkg=nfs-common state=present
-#     # when: is_debian_or_ubuntu
-#     tags:
-#       -nfs
-
-#   - name: Configure nfs server
-#     copy:
-#       dest: /etc/exports
-#       content: |
-#         /mysql *(rw,no_root_squash)
-#         /dev *(rw,no_root_squash)
-
-#   # - name: Starting nfs server
-#   #   service:
-#   #     name: nfs-server 
-#   #     state: started
-#   #     enabled: yes
-
-#   - name: ensure nfs service is running (Ubuntu)
-#     action: service name={{item}} state=started
-#     tags:
-#       - nfs
-#     with_items:
-#       - nfs-kernel-server
