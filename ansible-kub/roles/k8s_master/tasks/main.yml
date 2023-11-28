@@ -72,7 +72,7 @@
   - name: copy the configuration
     become: yes
     copy: 
-      src: /ansible/playbooks/clusterconfig-base.yml
+      src: ./ansible/playbooks/clusterconfig-base.yml
       dest: /home/ubuntu/
   
   - name: get gettext-base
