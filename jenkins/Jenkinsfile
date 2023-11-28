@@ -24,6 +24,7 @@ pipeline {
             steps {
                 echo 'Installation des ec2 et autoscalling group'
                 sh('export ANSIBLE_PRIVATE_KEY_FILE="./karim-new-key.pem"')
+                sh('chmod 400 karim-new-key.pem')
                 sh('export ANSIBLE_HOST_KEY_CHECKING=False')
                 sh('ansible-playbook ./ansible-kub/ec2-setup.yml')
                 echo 'Installation des ec2 terminé !'

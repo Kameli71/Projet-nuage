@@ -283,9 +283,9 @@
 
 
 # ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
-      # export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini
+      # export ANSIBLE_INVENTORY=./ansible/inventory/hosts.ini
       # ANS_KEYPAIR="karim-new-key.pem"
-      # export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"
+      # export ANSIBLE_PRIVATE_KEY_FILE="./karim-new-key.pem"
       # export ANSIBLE_HOST_KEY_CHECKING=False
 
 # - name: Add 1st instance to host group nfs_node
