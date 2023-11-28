@@ -6,15 +6,23 @@
    src: "K8s-WordPress"
    dest: "/home/ubuntu" 
 
-- name: Copying Kube Storage Class file
-  template:
-    src: "storage.yml.j2"
-    dest: "/home/ubuntu/K8s-WordPress/storage.yml"
+- name: Install micro
+  shell: kubectl apply -f /home/ubuntu/K8s-WordPress
 
-- name: Apply PersistentVolume
-  k8s:
-    state: present
-    definition: "/ubuntu/K8s-WordPress/storage.yml"
+# - name: Copying Kube Wordpress files 
+#   copy: 
+#    src: "K8s-WordPress"
+#    dest: "/home/ubuntu" 
+
+# - name: Copying Kube Storage Class file
+#   template:
+#     src: "storage.yml.j2"
+#     dest: "/home/ubuntu/K8s-WordPress/storage.yml"
+
+# - name: Apply PersistentVolume
+#   k8s:
+#     state: present
+#     definition: "/ubuntu/K8s-WordPress/storage.yml"
     
 # - name: Deploying Wordpress on Kubernetes
 #   command: kubectl create -k /home/ubuntu/K8s-WordPress/

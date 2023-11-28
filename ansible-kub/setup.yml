@@ -2,7 +2,15 @@
   # gather_facts: no
   gather_facts: no
   become: true
-
+  
+- hosts: role_master
+  become: false
+  gather_facts: no
+  tasks:
+    # - debug: var=ansible_all_ipv4_addresses verbosity=0
+    - name: Running K8s Slave Role
+      include_role:
+        name: kube-wordpress
 # - hosts: role_worker_nfs
 #   become: true
 #   tasks:
@@ -21,27 +29,27 @@
 #       include_role:
 #         name: k8s_master
 
-- hosts: role_master
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Running micro cart
-      include_role:
-        name: cart
+# - hosts: role_master
+#   become: true
+#   gather_facts: no
+#   tasks:
+#     - name: Running micro cart
+#       include_role:
+#         name: cart
 
-- hosts: role_master
-  become: true
-  gather_facts: yes
-  tasks:
-    - debug: var=ansible_all_ipv4_addresses verbosity=0
-    - name: Running K8s Slave Role
-      include_role:
-        name: kube-wordpress
+# - hosts: role_master
+#   become: true
+#   gather_facts: yes
+#   tasks:
+#     - debug: var=ansible_all_ipv4_addresses verbosity=0
+#     - name: Running K8s Slave Role
+#       include_role:
+#         name: kube-wordpress
 
-- hosts: role_master
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Running micro node
-      include_role:
-        name: node
+# - hosts: role_master
+#   become: true
+#   gather_facts: no
+#   tasks:
+#     - name: Running micro node
+#       include_role:
+#         name: node
