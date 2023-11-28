@@ -39,14 +39,14 @@ pipeline {
         stage('Build Configuration') {
             steps {
                 echo 'Configuration du cluster'
-                sh("ansible-playbook -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml /home/ec2-user/Projet-nuage/ansible-kub/roles/k8s_master/tasks/main.yml")
+                sh("ansible-playbook -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml ./ansible-kub/roles/k8s_master/tasks/main.yml")
                 echo 'Installation des ec2 terminé !'
             }
         }
         stage('Build Microservices') {
             steps {
                 echo 'Installation du microservice'
-                sh('ansible-playbook -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml /home/ec2-user/Projet-nuage/ansible-kub/setup.yml')
+                sh('ansible-playbook -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml ./ansible-kub/setup.yml')
                 echo 'Installation des microservices terminé !'
             }
         }

@@ -276,10 +276,10 @@
     timeout: 30 
 
 - name: Set dynamic inventory
-  shell: ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+  shell: ansible-inventory -v -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
 
 - name: Set dynamic inventory
-  shell: ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
+  shell: ansible -i ./ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
 
 
 # ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
