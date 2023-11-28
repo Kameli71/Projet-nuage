@@ -27,4 +27,12 @@
   tasks:
     - name: Running K8s Slave Role
       include_role:
-        name: node
+        name: kube-wordpress
+
+# - hosts: role_master
+#   become: true
+#   gather_facts: no
+#   tasks:
+#     - name: Running K8s Slave Role
+#       include_role:
+#         name: node

@@ -3,7 +3,7 @@
 - name: Copying Kube Wordpress files 
   copy: 
    src: "node"
-   dest: "/root" 
+   dest: "/home/ubuntu/" 
 
 # - name: Copying Kube Storage Class file
 #   template:
@@ -19,9 +19,9 @@
 #   shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
 
     
-- name: Deploying Wordpress on Kubernetes
-  command: sudo kubectl create -k /root/node/
+# - name: Deploying Wordpress on Kubernetes
+#   command: sudo kubectl create -k /ubuntu/node/
 
-- name: Go to this below URL to access WordPress after few seconds
-  debug:
-    msg: http://{{ groups['role_master'][0] }}:8000
+# - name: Go to this below URL to access WordPress after few seconds
+#   debug:
+#     msg: http://{{ groups['role_master'][0] }}:8000
