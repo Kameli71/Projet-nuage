@@ -6,9 +6,9 @@ spec:
   selector:
     matchLabels:
       app: cart
-      tier: cart
-      track: stable
-  replicas: 2
+      # tier: cart
+      # track: stable
+  # replicas: 1
   template:
     metadata:
       labels:
@@ -28,10 +28,10 @@ spec:
           ports:
             - name: http
               containerPort: 8000
-          volumeMounts:
-            - name: cart-storage
-              mountPath: /data
-      volumes:
-        - name: cart-storage
-          persistentVolumeClaim:
-            claimName: my-pv
+      #     volumeMounts:
+      #       - name: my-pv
+      #         mountPath: /data
+      # volumes:
+      #   - name: my-pv
+      #     persistentVolumeClaim:
+      #       claimName: my-pvc

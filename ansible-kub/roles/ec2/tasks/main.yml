@@ -118,7 +118,7 @@
     aws_region: "{{ region_name }}"
     security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
     key_name: "{{ keypair }}"
-    count: 2
+    count: 1
     vpc_subnet_id: "{{ subnet_id }}"
     state: present
     network:
@@ -271,12 +271,16 @@
       - owner: kkameli@thenuumfactory.fr
         propagate_at_launch: false
 
+- name : Init inventory
+  wait_for:
+    timeout: 30 
 
-# - name: Set dynamic inventory
-#   command:
-#     cmd: |
-#       sudo chmod 400 /home/ec2-user/Projet-nuage/karim-new-key.pem
-#       ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+- name: Set dynamic inventory
+  shell: ansible-inventory -v -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml --graph
+
+- name: Set dynamic inventory
+  shell: ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
+
 
 # ansible -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml all -m ping
       # export ANSIBLE_INVENTORY=/home/ec2-user/ansible/inventory/hosts.ini

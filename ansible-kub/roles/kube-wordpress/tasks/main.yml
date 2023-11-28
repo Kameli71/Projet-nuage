@@ -10,6 +10,11 @@
   template:
     src: "storage.yml.j2"
     dest: "/home/ubuntu/K8s-WordPress/storage.yml"
+
+- name: Apply PersistentVolume
+  k8s:
+    state: present
+    definition: "/ubuntu/K8s-WordPress/storage.yml"
     
 # - name: Deploying Wordpress on Kubernetes
 #   command: kubectl create -k /home/ubuntu/K8s-WordPress/

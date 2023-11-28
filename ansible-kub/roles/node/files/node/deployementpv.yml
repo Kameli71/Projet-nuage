@@ -1,8 +1,7 @@
 apiVersion: apps/v1
-kind: Pod
+kind: Deployment
 metadata:
-  name: myapp
-  namespace: my-namespace
+  name: pv
 spec:
   replicas: 2
   selector:
@@ -14,14 +13,14 @@ spec:
         app: myapp
     spec:
       containers:
-      - name: myapp
+      - name: node
         image: nginx:latest
         ports:
         - containerPort: 80
         volumeMounts:
-        - name: my-pv
+        - name: node
           mountPath: /data/test
       volumes:
-        - name: my-pv
+        - name: node
           hostPath:
             path: /data/test

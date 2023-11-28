@@ -1,12 +1,11 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: wordpress
-  namespace: my-namespace
+  name: my-service
 spec:
   selector:
-    app:  nginx
-  type:  LoadBalancer
+    app:  cart
+  # type:  LoadBalancer
   ports:
   - protocol: TCP
     port:  80

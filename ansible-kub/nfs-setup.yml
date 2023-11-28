@@ -1,0 +1,10 @@
+- hosts: all
+  gather_facts: no
+  become: true
+
+- hosts: role_worker_nfs
+  become: true
+  tasks:
+    - name: Running NFS Server Role
+      include_role:
+        name: nfs-server

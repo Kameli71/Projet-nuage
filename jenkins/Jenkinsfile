@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+    environment {
+        PRESTA_DB_DEV = credentials('PRESTA_DB_DEV')
+        PRESTA_MAIN_DEV = credentials('PRESTA_MAIN_DEV')
+        PRESTA_API_KEY_DEV = credentials('PRESTA_API_KEY_DEV')
+        PRESTA_PAT_DEV = credentials('PRESTA_PAT_DEV')
+    }
+    stages {
+
+        stage('Clean') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('clone') {
+            steps {
+                echo "Clonage du repo en cour..."
+                checkout scmGit(branches: [[name: '*/main']],
+                 extensions: [],
+                 userRemoteConfigs: [[url: "https://$PRESTA_PAT_DEV@github.com/Kameli71/Projet-nuage.git"]]
+                 )
+                // sh "cd Project-B-Its"
+                sh('pwd && ls -la')
+                // sh('cp $PRESTA_MAIN_DEV ./prestashop/')
+                // sh('cp $PRESTA_API_KEY_DEV ./prestashop/')
+                // }
+            }
+        }
+        stage('Build instances') {
+            steps {
+                echo 'Installation des ec2 et autoscalling group'
+                sh('ansible-playbook /home/ec2-user/Projet-nuage/ansible-kub/ec2-setup.yml')
+                echo 'Installation des ec2 terminé !'
+            }
+        }
+        stage('Build Nfs-server') {
+            steps {
+                echo 'Installation du Nfs-server'
+                sh('ansible-playbook /home/ec2-user/Projet-nuage/ansible-kub/nfs-setup.yml')
+                echo 'Installation des Nfs-server terminé !'
+            }
+        }      
+        stage('Build Configuration') {
+            steps {
+                echo 'Configuration du cluster'
+                sh "ansible-playbook -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml /home/ec2-user/Projet-nuage/ansible-kub/roles/k8s_master/tasks/main.yml"
+                echo 'Installation des ec2 terminé !'
+            }
+        }
+        stage('Build Microservices') {
+            steps {
+                echo 'Installation du microservice'
+                sh('ansible-playbook /home/ec2-user/Projet-nuage/ansible-kub/setup.yml')
+                echo 'Installation des microservices terminé !'
+            }
+        }
+    }
+}
+   

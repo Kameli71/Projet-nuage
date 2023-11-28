@@ -1,8 +1,5 @@
 ---
-# - hosts: all
-#   # gather_facts: no
-#   become: true
-#   task:
-
-  - name: Deploy micro cart
-    shell: kubectl apply -f /home/ec2-user/Projet-nuage/ingress.yml
+- name: Copying Kube cart files 
+  copy: 
+   src: "cart"
+   dest: "/home/ubuntu" 

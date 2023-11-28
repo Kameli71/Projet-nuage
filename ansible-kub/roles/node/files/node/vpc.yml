@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: my-pv
+  name: my-pvc
   labels:
-    app: nginx
+    app: cart
 spec:
   accessModes:
     - ReadWriteOnce

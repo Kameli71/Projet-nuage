@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: td-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80 # Port du service
+      targetPort: 80 # Port du Pod  # k port-forward sevice/svc-python-http 80:80

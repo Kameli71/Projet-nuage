@@ -1,11 +1,10 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: my-service
-  namespace: my-namespace
+  name: my-pv
 spec:
   selector:
-    app:  nginx
+    app:  cart
   # type:  LoadBalancer | ClusterIP | NodePort
   ports:
   - protocol: TCP

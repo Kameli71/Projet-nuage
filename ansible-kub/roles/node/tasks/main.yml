@@ -1,9 +1,14 @@
 ---
 # tasks file for node
-- name: Copying Kube Wordpress files 
-  copy: 
-   src: "node"
-   dest: "/home/ubuntu/" 
+# - name: Copying Kube node files 
+#   copy: 
+#    src: "node"
+#    dest: "/home/ubuntu/" 
+
+- name: Copier le répertoire avec le module copy
+  copy:
+    src: /home/ec2-user/nestjs-rabbitmq-microservices/helm
+    dest: /home/ubuntu
 
 # - name: Copying Kube Storage Class file
 #   template:

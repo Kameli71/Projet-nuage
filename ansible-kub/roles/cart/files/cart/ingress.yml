@@ -7,13 +7,13 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: all
+    - host: localhost
       http:
         paths:
-          - path: /
+          - path: /nginx
             pathType: Prefix
             backend:
               service:
-                name: cart
+                name: td-service
                 port:
-                  number: 8000
+                  number: 80
