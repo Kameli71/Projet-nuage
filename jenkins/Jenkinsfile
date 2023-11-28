@@ -18,7 +18,7 @@ pipeline {
                 echo "Clonage du repo en cour..."
                 checkout scmGit(branches: [[name: '*/main']],
                  extensions: [],
-                 userRemoteConfigs: [[url: "https://$PRESTA_PAT_DEV@github.com/Kameli71/Projet-nuage.git"]]
+                 userRemoteConfigs: [[url: "https://Kameli71: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@github.com/Kameli71/Projet-nuage.git"]]
                  )
                 // sh "cd Project-B-Its"
                 sh('pwd && ls -la')
