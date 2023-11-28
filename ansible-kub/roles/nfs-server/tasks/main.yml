@@ -1,10 +1,5 @@
 ---
 # tasks file for nfs-server
-- name: config root ssh key
-  shell: export ANSIBLE_PRIVATE_KEY_FILE="karim-new-key.pem"
-
-- name: config root ssh access
-  shell: export ANSIBLE_HOST_KEY_CHECKING=False
 
 - name: Creating mountable shared folders
   file: 
