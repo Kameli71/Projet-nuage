@@ -23,16 +23,16 @@ pipeline {
         stage('Build instances') {
             steps {
                 echo 'Installation des ec2 et autoscalling group'
-                sh('export ANSIBLE_PRIVATE_KEY_FILE="/home/ec2-user/Projet-nuage/karim-new-key.pem"')
+                sh('export ANSIBLE_PRIVATE_KEY_FILE="$pwd/karim-new-key.pem"')
                 sh('export ANSIBLE_HOST_KEY_CHECKING=False')
-                sh('ansible-playbook /home/ec2-user/Projet-nuage/ansible-kub/ec2-setup.yml')
+                sh('ansible-playbook $pwd/ansible-kub/ec2-setup.yml')
                 echo 'Installation des ec2 terminé !'
             }
         }
         stage('Build Nfs-server') {
             steps {
                 echo 'Installation du Nfs-server'
-                sh('ansible-playbook -i /home/ec2-user/ansible/inventory/dynamic_inventory_aws_ec2.yaml /home/ec2-user/Projet-nuage/ansible-kub/nfs-setup.yml')
+                sh('ansible-playbook -i $pwd/ansible/inventory/dynamic_inventory_aws_ec2.yaml $pwd/ansible-kub/nfs-setup.yml')
                 echo 'Installation des Nfs-server terminé !'
             }
         }      
