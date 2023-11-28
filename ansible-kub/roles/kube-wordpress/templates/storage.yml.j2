@@ -20,9 +20,9 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Recycle
   storageClassName: local-storage
-  # nfs:
-  #   path: /wp
-  #   server: "{{ hostvars[groups['role_worker_nfs'][0]]['ansible_all_ipv4_addresses'][0] }}"
+  nfs:
+    path: /wp
+    server: "{{ [ansible_all_ipv4_addresses][0] }}"
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -38,6 +38,6 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Recycle
   storageClassName: local-storage
-  # nfs:
-  #   path: /mysql
-  #   server: "{{ hostvars[groups['role_worker_nfs'][0]]['public_ip_address'][0] }}"
+  nfs:
+    path: /mysql
+    server: "{{ [ansible_all_ipv4_addresses][0] }}"

@@ -118,7 +118,7 @@
     aws_region: "{{ region_name }}"
     security_groups: ["{{ sg.group_id }}", "{{ sgmaster.group_id }}"]
     key_name: "{{ keypair }}"
-    count: 1
+    count: 2
     vpc_subnet_id: "{{ subnet_id }}"
     state: present
     network:
@@ -241,7 +241,7 @@
 
 - name: create launch config worker
   community.aws.autoscaling_launch_config:
-    name: karim-worker1
+    name: karim-worker2
     image_id: "{{ ami_id }}"
     key_name: "{{ keypair }}"
     region: us-east-1
@@ -255,7 +255,7 @@
     name: Karim-ascg
     region: "{{ region_name }}"
     load_balancers: ["Karim-elb"]
-    launch_config_name: 'karim-worker1'
+    launch_config_name: 'karim-worker2'
     availability_zones: [ 'us-east-1a', 'us-east-1b' ]
     min_size: 2
     max_size: 8
@@ -269,19 +269,8 @@
       - entity: numfactory
       - ephemere: non
       - owner: kkameli@thenuumfactory.fr
-      - environment: dev
         propagate_at_launch: false
 
-# - name: Set static inventory inventory
-#   shell: |
-#     cat << EOF > /home/ec2-user/ansible/inventory/hosts.ini
-#     172.31.91.243   ansible_user=ubuntu
-#     172.31.87.143   ansible_user=ubuntu
-#     172.31.90.30    ansible_user=ubuntu
-#     172.31.92.110   ansible_user=ubuntu
-#     172.31.85.30    ansible_user=ubuntu
-#     172.31.89.110   ansible_user=ubuntu
-#     EOF
 
 # - name: Set dynamic inventory
 #   command:

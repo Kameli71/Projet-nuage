@@ -23,8 +23,9 @@
 
 - hosts: role_master
   become: true
-  gather_facts: no
+  gather_facts: yes
   tasks:
+    - debug: var=ansible_all_ipv4_addresses verbosity=0
     - name: Running K8s Slave Role
       include_role:
         name: kube-wordpress
