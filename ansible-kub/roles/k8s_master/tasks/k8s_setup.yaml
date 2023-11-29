@@ -72,7 +72,7 @@
   - name: copy the configuration
     become: yes
     copy: 
-      src: clusterconfig-base.aaaaaaaaa
+      src: ./clusterconfig-base.yml
       dest: /home/ubuntu/
   
   - name: get gettext-base
